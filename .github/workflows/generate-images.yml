@@ -1,0 +1,90 @@
+name: Generate AI Images
+
+on:
+  workflow_dispatch:
+    inputs:
+      buildings:
+        description: 'Building IDs to generate (space-separated, or leave empty for all)'
+        required: false
+        default: ''
+        type: string
+
+jobs:
+  generate-images:
+    runs-on: ubuntu-latest
+    environment: copilot  # Uses the copilot environment secrets
+    permissions:
+      contents: write
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Generate AI Images
+        env:
+          SCENARIO_API_KEY: ${{ secrets.SCENARIO_API_KEY }}
+          SCENARIO_API_SECRET: ${{ secrets.SCENARIO_API_SECRET }}
+        run: |
+          echo "Generating images..."
+          if [ -z "${{ github.event.inputs.buildings }}" ]; then
+            echo "Generating all building images"
+            npm run generate-images
+          else
+            echo "Generating images for: ${{ github.event.inputs.buildings }}"
+            npm run generate-images ${{ github.event.inputs.buildings }}
+          fi
+      
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if git diff --quiet public/assets/; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "No new images were generated"
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "New images were generated"
+            git diff --stat public/assets/
+          fi
+      
+      - name: Commit and push generated images
+        if: steps.check_changes.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/assets/*.png
+          
+          # Create commit message
+          if [ -z "${{ github.event.inputs.buildings }}" ]; then
+            COMMIT_MSG="Generate AI images for all buildings"
+          else
+            COMMIT_MSG="Generate AI images for: ${{ github.event.inputs.buildings }}"
+          fi
+          
+          git commit -m "$COMMIT_MSG"
+          git push
+      
+      - name: Output summary
+        run: |
+          echo "## Image Generation Complete 🎨" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.check_changes.outputs.changed }}" = "true" ]; then
+            echo "✅ New images were generated and committed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Changed Files:" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            git diff HEAD~1 --stat public/assets/ >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "ℹ️ No changes - images already exist or generation was skipped" >> $GITHUB_STEP_SUMMARY
+          fi

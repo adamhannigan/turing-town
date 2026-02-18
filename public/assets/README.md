@@ -14,12 +14,24 @@ This directory contains all game assets including building sprites, icons, and t
 
 ## Generating AI Images
 
-These images can be generated using the Scenario AI API. See **[docs/GENERATING_IMAGES.md](../../docs/GENERATING_IMAGES.md)** for detailed instructions on:
+These images can be generated using the Scenario AI API:
 
-- Setting up Scenario API credentials
+### Using GitHub Actions (Recommended)
+1. Go to the **Actions** tab in GitHub
+2. Run the **Generate AI Images** workflow
+3. Images will be generated and committed automatically
+
+This method has proper network access and uses the credentials configured in the **copilot** environment.
+
+### Using Command Line Locally
+See **[docs/GENERATING_IMAGES.md](../../docs/GENERATING_IMAGES.md)** for detailed instructions on:
+
+- Setting up Scenario API credentials locally
 - Running the image generation script
 - Customizing image styles and prompts
 - Adding new building assets
+
+> **Note**: The GitHub Copilot agent cannot directly access external APIs due to network restrictions. Use the GitHub Actions workflow or generate locally.
 
 ## Quick Start
 

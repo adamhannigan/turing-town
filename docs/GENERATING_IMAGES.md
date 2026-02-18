@@ -15,7 +15,7 @@ To generate images, you need:
 
 ## Setting Up Credentials
 
-### For GitHub Copilot (Recommended)
+### For GitHub Actions (Recommended)
 
 Configure credentials in your repository's GitHub environment:
 
@@ -25,7 +25,9 @@ Configure credentials in your repository's GitHub environment:
    - `SCENARIO_API_KEY` - Your Scenario API key
    - `SCENARIO_API_SECRET` - Your Scenario API secret
 
-Once configured, the GitHub Copilot coding agent will automatically have access to generate images.
+Once configured, you can use the automated workflow to generate images (see "Using GitHub Actions" below).
+
+> **Note about GitHub Copilot agent:** The Copilot agent's sandboxed environment blocks external API access for security. While it can see the credentials, it cannot directly call the Scenario API. Use the GitHub Actions workflow or local generation instead.
 
 ### For Local Development
 
@@ -44,6 +46,20 @@ export SCENARIO_API_SECRET="your_api_secret_here"
 ```
 
 ## Generating Building Images
+
+### Using GitHub Actions (Easiest)
+
+The repository includes a GitHub Actions workflow that can generate images with proper network access:
+
+1. Go to **Actions** tab in GitHub
+2. Select **Generate AI Images** workflow
+3. Click **Run workflow**
+4. Optionally specify building IDs (e.g., `house shop`) or leave empty for all buildings
+5. The workflow will generate images and commit them automatically
+
+This is the recommended method as it has proper network access to the Scenario API.
+
+### Using Local Command Line
 
 To generate images for all buildings in the game catalog:
 
@@ -87,6 +103,18 @@ To replace these with AI-generated images:
 ### "Scenario API credentials missing" error
 
 This means the environment variables are not set. Follow the steps in "Setting Up Credentials" above.
+
+### "ENOTFOUND api.cloud.scenario.com" or network errors
+
+This error occurs when the environment doesn't have network access to external APIs. This is common in:
+- GitHub Copilot agent sandboxed environments (security restriction)
+- CI environments with restricted network access
+- Firewalled development environments
+
+**Solutions:**
+1. Use the GitHub Actions workflow (see "Using GitHub Actions" above) - it runs with full network access
+2. Generate images on your local machine where network access is available
+3. See [COPILOT_IMAGE_GENERATION.md](./COPILOT_IMAGE_GENERATION.md) for detailed information about limitations
 
 ### Images look wrong or don't match the game style
 
