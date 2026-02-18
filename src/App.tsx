@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPhaserGame, destroyPhaserGame } from '@/game/phaserGame';
 import { createInitialState, type GameState } from '@/game/state';
 import { runCoinAccumulator } from '@/game/ecs/systems/coinAccumulator';
-import { placeBuilding, collectCoins, resetGame } from '@/game/actions';
+import { placeBuilding, collectCoins, resetGame, moveBuilding } from '@/game/actions';
 import { HUD } from '@/hud/HUD';
 import '@/index.css';
 
@@ -27,11 +27,22 @@ export default function App() {
     if (ok) setState({ ...s });
   }, []);
 
+  const onDragStart = useCallback((_entityId: number, _gridX: number, _gridY: number) => {
+    // Optional: could track drag state here if needed for UI feedback
+  }, []);
+
+  const onDragEnd = useCallback((entityId: number, toGridX: number, toGridY: number) => {
+    const ok = moveBuilding(entityId, toGridX, toGridY);
+    if (ok) {
+      setState({ ...stateRef.current });
+    }
+  }, []);
+
   useEffect(() => {
     if (!containerRef.current) return;
-    createPhaserGame(onCellClick);
+    createPhaserGame(onCellClick, onDragStart, onDragEnd);
     return () => destroyPhaserGame();
-  }, [onCellClick]);
+  }, [onCellClick, onDragStart, onDragEnd]);
 
   useEffect(() => {
     const interval = setInterval(() => {

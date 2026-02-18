@@ -65,6 +65,40 @@ export function collectCoins(state: GameState): number {
   return total;
 }
 
+/** Move a building from one grid cell to another, preserving its state */
+export function moveBuilding(
+  entityId: number,
+  toGridX: number,
+  toGridY: number
+): boolean {
+  const entities = queryEntities('gridCell');
+  const entity = entities.find((e) => e.id === entityId);
+  if (!entity) return false;
+
+  // Validate target position is within bounds
+  if (toGridX < 0 || toGridX >= GRID_WIDTH || toGridY < 0 || toGridY >= GRID_HEIGHT) {
+    return false;
+  }
+
+  // Check target cell is empty (allow moving to same position)
+  const existing = entities.find(
+    (e) => e.gridCell!.gridX === toGridX && e.gridCell!.gridY === toGridY && e.id !== entityId
+  );
+  if (existing) return false;
+
+  // Update grid position
+  entity.gridCell!.gridX = toGridX;
+  entity.gridCell!.gridY = toGridY;
+
+  // Update world position to match
+  if (entity.position) {
+    entity.position.x = toGridX * TILE_SIZE + TILE_SIZE / 2;
+    entity.position.y = toGridY * TILE_SIZE + TILE_SIZE / 2;
+  }
+
+  return true;
+}
+
 export function resetGame(state: GameState): void {
   clearWorld();
   state.coins = INITIAL_COINS;
