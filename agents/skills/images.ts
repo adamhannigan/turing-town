@@ -2,13 +2,23 @@
  * Scenario AI image generation skill.
  * Use when an agent task is to create an image (e.g. building sprite, icon).
  *
+ * Model presets (use modelId in requestImage):
+ *   - UI elements (buttons, icons, HUD art): SCENARIO_MODEL_UI
+ *   - Game/Phaser assets (buildings, roads, tiles): SCENARIO_MODEL_GAME_ASSETS (isometric style)
+ *
  * ENV (GitHub Actions: set as repository secrets; locally: .env or export):
  *   SCENARIO_API_KEY    – required
  *   SCENARIO_API_SECRET – required
- *   SCENARIO_MODEL_ID   – optional; default model for requestImage()
+ *   SCENARIO_MODEL_ID   – optional; fallback when modelId not passed
  */
 
 const SCENARIO_BASE = "https://api.cloud.scenario.com/v1";
+
+/** Use for UI elements: buttons, icons, HUD art. */
+export const SCENARIO_MODEL_UI = "model_mcYj5uGzXteUw6tKapsaDgBP";
+
+/** Use for game/Phaser assets: buildings, roads, tiles. Isometric style matching gameplay. */
+export const SCENARIO_MODEL_GAME_ASSETS = "model_nB7x6dxqtxtmFDm8tdFdv9xP";
 const POLL_INTERVAL_MS = 2000;
 const POLL_MAX_ATTEMPTS = 60; // ~2 min
 

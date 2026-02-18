@@ -1,30 +1,49 @@
 # Agent skills
 
-Scripts and tools that agents can run when handling issues (e.g. image generation).
+Scripts and tools that agents (e.g. GitHub Copilot) run when handling issues.
 
-## images.ts (Scenario AI – not set up yet)
+## images.ts (Scenario AI)
 
-**Status:** Scenario API is not configured. The game uses **placeholder images** in `public/assets/` (house.png, shop.png). Replace those files with your own art, or configure Scenario and use this skill later.
+**Purpose:** Generate images for the game (buildings, icons, tiles) via Scenario API. When an issue or mechanic **requires a new image**, agents must:
 
-**Purpose:** Request images from Scenario AI (text-to-image or image-to-image). Use when an issue or task asks for generating art (e.g. building sprites, icons).
+1. Call this skill with the **correct model** (see below).
+2. **Store the image in the repo** under **`public/assets/<name>.png`** (download from the returned URL).
+3. Wire it in via `src/game/scene.ts` preload and the building catalog or ECS.
 
-**Environment (GitHub secrets or local ENV):**
+**Which model to use:**
+
+- **UI elements** (buttons, icons, HUD art): use **`SCENARIO_MODEL_UI`** (`model_mcYj5uGzXteUw6tKapsaDgBP`).
+- **Game/Phaser assets** (buildings, roads, tiles): use **`SCENARIO_MODEL_GAME_ASSETS`** (`model_nB7x6dxqtxtmFDm8tdFdv9xP`) — **isometric** style, matches gameplay.
+
+**Environment (GitHub repo secrets or local ENV):**
 
 - `SCENARIO_API_KEY` – (required) Scenario API key.
 - `SCENARIO_API_SECRET` – (required) Scenario API secret.
-- `SCENARIO_MODEL_ID` – (optional) Default model ID for generation.
+- `SCENARIO_MODEL_ID` – (optional) Fallback when `modelId` is not passed.
 
-**Usage (when configured):**
+**Usage:**
 
 ```ts
-import { requestImage } from "./images";
+import { requestImage, SCENARIO_MODEL_UI, SCENARIO_MODEL_GAME_ASSETS } from "./images";
 
-const result = await requestImage({
-  prompt: "small pixel art house, top-down, green roof, 64x64",
+// UI element (e.g. HUD icon)
+const uiResult = await requestImage({
+  prompt: "simple flat icon for collect coins button, game UI",
+  modelId: SCENARIO_MODEL_UI,
   width: 64,
   height: 64,
+  aspectRatio: "1:1",
 });
-// result.url or result.assetId for the generated image
+
+// Game asset (building, road, tile) — isometric
+const assetResult = await requestImage({
+  prompt: "isometric pixel art house, 56x56, green roof, game asset",
+  modelId: SCENARIO_MODEL_GAME_ASSETS,
+  width: 56,
+  height: 56,
+  aspectRatio: "1:1",
+});
+// Download from result.url and save to public/assets/<name>.png, then use in scene preload.
 ```
 
-Until then, use `npm run generate-placeholders` to regenerate placeholders, or replace the PNGs in `public/assets/` manually.
+If Scenario is not configured, add a placeholder in `public/assets/` and note in the PR that the asset should be replaced via Scenario once credentials are set.
