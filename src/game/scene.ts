@@ -8,14 +8,25 @@ import { getAllEntities } from './ecs/world';
 import { GRID_WIDTH, GRID_HEIGHT, TILE_SIZE } from './state';
 
 let cellClickCallback: ((gridX: number, gridY: number) => void) | null = null;
+let dragStartCallback: ((entityId: number, gridX: number, gridY: number) => void) | null = null;
+let dragEndCallback: ((entityId: number, toGridX: number, toGridY: number) => void) | null = null;
 
 export function setCellClickCallback(cb: (gridX: number, gridY: number) => void): void {
   cellClickCallback = cb;
 }
 
+export function setDragCallbacks(
+  onDragStart: (entityId: number, gridX: number, gridY: number) => void,
+  onDragEnd: (entityId: number, toGridX: number, toGridY: number) => void
+): void {
+  dragStartCallback = onDragStart;
+  dragEndCallback = onDragEnd;
+}
+
 export class MainScene extends Phaser.Scene {
   private gridGraphics!: Phaser.GameObjects.Graphics;
   private buildingSprites = new Map<number, Phaser.GameObjects.Sprite>();
+  private draggedEntity: number | null = null;
 
   constructor() {
     super({ key: 'Main' });
@@ -82,9 +93,39 @@ export class MainScene extends Phaser.Scene {
       if (!sprite) {
         sprite = this.add.sprite(px, py, entity.sprite!.key);
         sprite.setDisplaySize(TILE_SIZE - 8, TILE_SIZE - 8);
+        sprite.setInteractive({ draggable: true, useHandCursor: true });
+        
+        // Drag start: store entity and original position
+        sprite.on('dragstart', () => {
+          this.draggedEntity = id;
+          sprite!.setAlpha(0.6);
+          dragStartCallback?.(id, gridX, gridY);
+        });
+
+        // Dragging: follow pointer
+        sprite.on('drag', (_pointer: Phaser.Input.Pointer, dragX: number, dragY: number) => {
+          sprite!.x = dragX;
+          sprite!.y = dragY;
+        });
+
+        // Drag end: determine target cell and finalize move
+        sprite.on('dragend', (pointer: Phaser.Input.Pointer) => {
+          const toGridX = Math.floor(pointer.x / TILE_SIZE);
+          const toGridY = Math.floor(pointer.y / TILE_SIZE);
+          sprite!.setAlpha(1);
+          
+          // Call the callback to handle movement logic
+          dragEndCallback?.(id, toGridX, toGridY);
+          
+          this.draggedEntity = null;
+        });
+
         this.buildingSprites.set(id, sprite);
       } else {
-        sprite.setPosition(px, py);
+        // Only update position if not currently being dragged
+        if (this.draggedEntity !== id) {
+          sprite.setPosition(px, py);
+        }
         sprite.setTexture(entity.sprite!.key);
         sprite.setVisible(true);
       }
