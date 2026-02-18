@@ -10,7 +10,7 @@ Use this when an agent picks up a GitHub issue (bug or incremental feature). The
    - For features: desired behavior, where it should appear (HUD, grid, new building type, etc.), and any constraints.
 3. Once details are sufficient (or for trivial fixes), create a branch (e.g. `issue-<number>-short-slug`) and implement in `src/` following **`agents/context/game-rules.md`**. Do not break the core loop (place → earn → collect → place more).
 4. **If the mechanic or change requires a new image** (new building, icon, tile, UI art):
-   - **Building sprites:** Run **`npm run generate-images`** (or `npm run generate-images shop factory` for specific IDs). This uses Scenario and writes to **`public/assets/<id>.png`**. Do **not** use placeholders when this command succeeds. If it fails (e.g. missing `SCENARIO_API_KEY` / `SCENARIO_API_SECRET`), add a placeholder and note in the PR that assets should be replaced via Scenario once the **copilot** environment has those secrets.
+   - **Building sprites:** Run **`npm run generate-images`** (or `npm run generate-images shop factory` for specific IDs). **Do not check for credentials first** — run the script. If it succeeds, it writes to **`public/assets/<id>.png`**; use those files. **Only if the script exits with an error** (e.g. "Scenario API credentials missing") use placeholders and note in the PR that assets should be replaced via Scenario once the repo’s **copilot** environment has `SCENARIO_API_KEY` and `SCENARIO_API_SECRET` (Settings → Environments → copilot).
    - **UI elements** (buttons, icons, HUD): use **`agents/skills/images.ts`** with **`SCENARIO_MODEL_UI`** (`requestImage`); download from the returned URL and save to **`public/assets/`**.
    - **Wire it in**: add the image in `src/game/scene.ts` preload and reference the same key in the building catalog or ECS sprite. Commit the new asset file with the code change.
 5. Open a PR targeting the default branch. In the PR description, reference the issue (e.g. `Fixes #123`). Mark ready for review when done.
@@ -26,7 +26,7 @@ Use this when an agent picks up a GitHub issue (bug or incremental feature). The
 
 | Step | Action |
 |------|--------|
-| 1 | **Buildings:** Run **`npm run generate-images`** (or with IDs, e.g. `npm run generate-images shop`). **UI:** Use `requestImage` with `SCENARIO_MODEL_UI` from `agents/skills/images.ts`. |
+| 1 | **Buildings:** Run **`npm run generate-images`** (do not check env first). If it errors with "credentials missing", then use placeholders. **UI:** Use `requestImage` with `SCENARIO_MODEL_UI` from `agents/skills/images.ts`. |
 | 2 | Ensure the image is in **`public/assets/<name>.png`** (script writes there; for UI, download from result URL). |
 | 3 | In `src/game/scene.ts` preload: `this.load.image('<key>', baseUrl + 'assets/<name>.png')`. |
 | 4 | Use the same `<key>` in the building catalog or ECS sprite component. |

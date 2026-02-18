@@ -48,13 +48,13 @@ If a change breaks this loop (e.g. placement no longer costs coins, or coins nev
 When a mechanic or change **requires a new image** (e.g. new building sprite, icon, tile):
 
 1. **Generate** the image:
-   - **Building sprites (catalog buildings):** Run the repo script **`npm run generate-images`** (or `npm run generate-images house shop factory` for specific IDs). It uses Scenario (isometric model), writes to **`public/assets/<id>.png`**, and requires `SCENARIO_API_KEY` and `SCENARIO_API_SECRET` (e.g. in the repo’s **copilot** environment so the agent has them). Do **not** use placeholders when this script can run successfully.
+   - **Building sprites (catalog buildings):** Run **`npm run generate-images`** (or `npm run generate-images house shop factory` for specific IDs). **Do not check for credentials beforehand** — run the script. If it succeeds, it writes to **`public/assets/<id>.png`**. Only if the script **exits with an error** (e.g. "Scenario API credentials missing") use placeholders and note in the PR. (For Copilot to have credentials: Settings → Environments → **copilot** → Environment secrets: `SCENARIO_API_KEY`, `SCENARIO_API_SECRET`.)
    - **UI elements** (buttons, icons, HUD): use **`agents/skills/images.ts`** with **`SCENARIO_MODEL_UI`**: `requestImage({ prompt: "...", modelId: SCENARIO_MODEL_UI, ... })`. Download from the returned URL.
    - **Other game assets** (e.g. roads, tiles): use **`SCENARIO_MODEL_GAME_ASSETS`** (isometric) in `requestImage`; download and save to **`public/assets/`**.
 2. **Store** the generated image in the repo under **`public/assets/`** (e.g. `public/assets/buildingname.png`). Use PNG; size should match game use (e.g. 56×56 for buildings to match `TILE_SIZE`).
 3. **Use** the asset in the game: add `this.load.image('key', baseUrl + 'assets/buildingname.png')` in `src/game/scene.ts` preload, and reference the same key in the building catalog / ECS sprite component.
 
-Only if Scenario credentials are **not** available (e.g. script fails or env missing): add a placeholder PNG and note in the PR that the asset should be replaced via Scenario once configured.
+Fall back to placeholders **only when** `npm run generate-images` (or Scenario) fails with a credentials error; then note in the PR that assets should be replaced once the **copilot** environment has the secrets.
 
 ## Out of scope for v1
 

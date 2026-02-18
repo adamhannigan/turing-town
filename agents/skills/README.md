@@ -6,7 +6,7 @@ Scripts and tools that agents (e.g. GitHub Copilot) run when handling issues.
 
 **Purpose:** Generate images for the game (buildings, icons, tiles) via Scenario API. When an issue or mechanic **requires a new image**, agents must:
 
-1. **Building sprites:** Run **`npm run generate-images`** (see `scripts/generate-images.ts`). It uses this skill with the isometric model and writes to **`public/assets/<id>.png`**. Prefer this over calling `requestImage` directly so Scenario is always used when credentials are available.
+1. **Building sprites:** Run **`npm run generate-images`** (see `scripts/generate-images.ts`). **Do not check for env vars first** — run it. If it succeeds, it writes to **`public/assets/<id>.png`**. Only if the script fails (e.g. "Scenario API credentials missing") use placeholders and note in the PR.
 2. **UI or other assets:** Call this skill with the **correct model** (see below); **store** the image under **`public/assets/<name>.png`** (download from the returned URL).
 3. Wire assets in via `src/game/scene.ts` preload and the building catalog or ECS.
 
@@ -46,4 +46,4 @@ const assetResult = await requestImage({
 // Download from result.url and save to public/assets/<name>.png, then use in scene preload.
 ```
 
-If Scenario is not configured, add a placeholder in `public/assets/` and note in the PR that the asset should be replaced via Scenario once credentials are set.
+If **`npm run generate-images`** (or `requestImage`) fails with a credentials error, add a placeholder in `public/assets/` and note in the PR. For Copilot: set `SCENARIO_API_KEY` and `SCENARIO_API_SECRET` in the repo’s **copilot** environment (Settings → Environments → copilot).
