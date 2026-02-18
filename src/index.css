@@ -54,6 +54,26 @@ body {
   font-size: 1.4rem;
 }
 
+.coins-icon-img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.icon-img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.icon-img-inline {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
 .actions {
   display: flex;
   align-items: center;
