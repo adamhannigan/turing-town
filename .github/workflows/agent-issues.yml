@@ -1,205 +1,114 @@
-# When an issue is opened (or commented on after "needs-details"),
-# acknowledge it, ask for more info if needed, then run the agent workflow.
-# The agent step is a placeholder that posts status; you can replace it with
-# a job that triggers your Copilot Coding Agent or runs a script that creates a PR.
+# Runs every minute: triages open issues and triggers agent work.
+# Also run manually from Actions tab via "Run workflow".
 
 name: Agent – Issue handling
 
 on:
-  issues:
-    types: [opened, edited]
-  issue_comment:
-    types: [created]
-  # Run manually from Actions tab to verify the workflow is loaded
+  schedule:
+    # Every minute
+    - cron: '* * * * *'
   workflow_dispatch:
 
 permissions:
   contents: read
   issues: write
 
-env:
-  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
 jobs:
-  triage:
+  process-issues:
     runs-on: ubuntu-latest
-    outputs:
-      run_agent: ${{ steps.agent_trigger.outputs.run_agent }}
-    if: github.event_name == 'issues' || (github.event_name == 'issue_comment' && github.event.issue.state == 'open')
     steps:
-      - name: Check for needs-details
-        id: needs_details
-        run: |
-          if [ "${{ github.event_name }}" = "issue_comment" ]; then
-            # Only react when someone (e.g. issue author) comments on an issue we asked for details on
-            echo "is_comment=true" >> $GITHUB_OUTPUT
-          else
-            echo "is_comment=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Fetch issue and labels
-        id: issue
+      - name: Triage and run agent on open issues
         uses: actions/github-script@v7
         with:
           script: |
-            const issue = context.payload.issue || context.payload.issue;
-            const body = (issue && issue.body) || '';
-            const labels = (issue && issue.labels || []).map(l => l.name);
-            const hasNeedsDetails = labels.includes('needs-details');
-            const commentCount = issue ? (issue.comments || 0) : 0;
-            const isCommentEvent = context.eventName === 'issue_comment';
-            const hasEnoughDetail = body && body.length > 80 && !body.toLowerCase().includes('n/a') && !body.toLowerCase().includes('todo');
-            core.setOutput('number', issue?.number ?? 0);
-            core.setOutput('body', body);
-            core.setOutput('body_length', body.length);
-            core.setOutput('has_needs_details', hasNeedsDetails);
-            core.setOutput('has_enough_detail', hasEnoughDetail);
-            core.setOutput('is_comment', isCommentEvent ? 'true' : 'false');
-            core.setOutput('user', context.payload.sender?.login || context.payload.issue?.user?.login || '');
+            const { owner, repo } = context.repo;
+            const octokit = github.rest;
 
-      - name: Add needs-details label and comment when details missing (issue opened)
-        if: github.event_name == 'issues' && github.event.action == 'opened' && steps.issue.outputs.body_length < 80
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const issue = context.payload.issue;
-            await github.rest.issues.addLabels({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issue.number,
-              labels: ['needs-details']
-            });
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issue.number,
-              body: `👋 Thanks for opening this issue. To help the agent implement it, please add a bit more detail:\n\n` +
-                `- **Bug:** Steps to reproduce, expected vs actual behavior, and environment (browser/OS).\n` +
-                `- **Feature:** What you want to see, where it should appear (e.g. HUD, new building type), and any constraints.\n\n` +
-                `Reply here with the details and we’ll pick it up.`
+            // Open issues without agent-done, oldest first
+            const { data: issues } = await octokit.issues.listForRepo({
+              owner,
+              repo,
+              state: 'open',
+              sort: 'created',
+              direction: 'asc',
+              per_page: 20,
             });
 
-      - name: Acknowledge issue (opened, enough detail)
-        if: github.event_name == 'issues' && steps.issue.outputs.body_length >= 80
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const issue = context.payload.issue;
-            await github.rest.issues.addLabels({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issue.number,
-              labels: ['agent-acknowledged']
-            });
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issue.number,
-              body: `✅ **Acknowledged.** The agent will work on this. You’ll get another update when work has started and when it’s done.`
-            });
+            const labelNames = (issue) => (issue.labels || []).map((l) => l.name);
+            const has = (issue, name) => labelNames(issue).includes(name);
 
-      - name: Remove needs-details and acknowledge (new comment with enough detail)
-        if: github.event_name == 'issue_comment' && steps.issue.outputs.has_needs_details == 'true'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const issue = context.payload.issue;
-            const commentBody = (context.payload.comment && context.payload.comment.body) || '';
-            if (commentBody.length < 40) return;
-            await github.rest.issues.removeLabel({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issue.number,
-              name: 'needs-details'
-            });
-            await github.rest.issues.addLabels({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issue.number,
-              labels: ['agent-acknowledged']
-            });
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issue.number,
-              body: `✅ **Thanks for the details.** The agent will work on this. You’ll get another update when work has started and when it’s done.`
-            });
+            for (const issue of issues) {
+              if (issue.pull_request) continue; // skip PRs
+              if (has(issue, 'agent-done')) continue;
 
-      - name: Set run_agent output for work job
-        id: agent_trigger
-        run: |
-          BODY_LEN="${{ steps.issue.outputs.body_length }}"
-          NEEDS_DETAILS="${{ steps.issue.outputs.has_needs_details }}"
-          if [ "${{ github.event_name }}" = "issues" ] && [ "${{ github.event.action }}" = "opened" ] && [ -n "$BODY_LEN" ] && [ "$BODY_LEN" -ge 80 ]; then
-            echo "run_agent=true" >> $GITHUB_OUTPUT
-          elif [ "${{ github.event_name }}" = "issue_comment" ] && [ "$NEEDS_DETAILS" = "true" ]; then
-            echo "run_agent=true" >> $GITHUB_OUTPUT
-          else
-            echo "run_agent=false" >> $GITHUB_OUTPUT
-          fi
+              const body = (issue.body || '').trim();
+              const bodyLong = body.length >= 80;
+              const hasNeedsDetails = has(issue, 'needs-details');
+              const hasAck = has(issue, 'agent-acknowledged');
+              const hasInProgress = has(issue, 'agent-in-progress');
 
-  work:
-    needs: triage
-    runs-on: ubuntu-latest
-    if: needs.triage.outputs.run_agent == 'true'
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+              // 1) Needs more detail: short body and not yet asked
+              if (!bodyLong && !hasNeedsDetails) {
+                await octokit.issues.addLabels({ owner, repo, issue_number: issue.number, labels: ['needs-details'] });
+                await octokit.issues.createComment({
+                  owner, repo, issue_number: issue.number,
+                  body: `👋 Thanks for opening this issue. To help the agent implement it, please add a bit more detail:\n\n` +
+                    `- **Bug:** Steps to reproduce, expected vs actual behavior, and environment (browser/OS).\n` +
+                    `- **Feature:** What you want to see, where it should appear (e.g. HUD, new building type), and any constraints.\n\n` +
+                    `Reply here with the details and we'll pick it up.`,
+                });
+                console.log(`Issue #${issue.number}: added needs-details`);
+                return; // one action per run
+              }
 
-      - name: Comment – Working on it
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const issue = context.payload.issue;
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issue.number,
-              body: `🔧 **Working on this.** The agent is processing the issue. You’ll get a follow-up when a PR is ready or the task is done.`
-            });
-            await github.rest.issues.addLabels({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issue.number,
-              labels: ['agent-in-progress']
-            });
+              // 2) Check if needs-details was satisfied by a comment
+              if (hasNeedsDetails) {
+                const { data: comments } = await octokit.issues.listComments({ owner, repo, issue_number: issue.number });
+                const lastUserComment = comments.filter(c => !c.user?.login?.includes('[bot]')).pop();
+                const commentBody = (lastUserComment?.body || '').trim();
+                if (commentBody.length >= 40) {
+                  await octokit.issues.removeLabel({ owner, repo, issue_number: issue.number, name: 'needs-details' });
+                  await octokit.issues.addLabels({ owner, repo, issue_number: issue.number, labels: ['agent-acknowledged'] });
+                  await octokit.issues.createComment({
+                    owner, repo, issue_number: issue.number,
+                    body: `✅ **Thanks for the details.** The agent will work on this. You'll get another update when work has started and when it's done.`,
+                  });
+                  console.log(`Issue #${issue.number}: acknowledged after comment`);
+                  return;
+                }
+                return; // still waiting for details
+              }
 
-      # Placeholder: replace with a step that runs your agent (e.g. script that creates branch + PR, or calls external API).
-      - name: Agent placeholder (create branch / PR here)
-        run: |
-          echo "Replace this step with your Copilot Coding Agent or a script that:"
-          echo "  1. Creates a branch (e.g. issue-<number>-slug)"
-          echo "  2. Applies the fix or feature per agents/context/game-rules.md"
-          echo "  3. Opens a PR that references this issue (Fixes #<number>)"
-          echo "Then add a final step that comments 'Done in PR #X' when the PR is opened."
+              // 3) Acknowledge: long body, not yet acknowledged
+              if (bodyLong && !hasAck) {
+                await octokit.issues.addLabels({ owner, repo, issue_number: issue.number, labels: ['agent-acknowledged'] });
+                await octokit.issues.createComment({
+                  owner, repo, issue_number: issue.number,
+                  body: `✅ **Acknowledged.** The agent will work on this. You'll get another update when work has started and when it's done.`,
+                });
+                console.log(`Issue #${issue.number}: acknowledged`);
+                return;
+              }
 
-      - name: Comment – Ticket done (placeholder)
-        if: success()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const issue = context.payload.issue;
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issue.number,
-              body: `✅ **Ticket handled.** When you wire the agent step above to create a real PR, this comment will link it (e.g. "Done in PR #123").`
-            });
-            await github.rest.issues.removeLabel({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issue.number,
-              name: 'agent-in-progress'
-            });
-            await github.rest.issues.addLabels({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issue.number,
-              labels: ['agent-done']
-            });
-</think>
-Fixing the workflow: correcting the `work` job's `if` and fixing the duplicate `needs`/`if` at the end.
-<｜tool▁calls▁begin｜><｜tool▁call▁begin｜>
-Read
+              // 4) Run agent work: acknowledged and not yet in progress or done
+              if (hasAck && !hasInProgress && !has(issue, 'agent-done')) {
+                await octokit.issues.addLabels({ owner, repo, issue_number: issue.number, labels: ['agent-in-progress'] });
+                await octokit.issues.createComment({
+                  owner, repo, issue_number: issue.number,
+                  body: `🔧 **Working on this.** The agent is processing the issue. You'll get a follow-up when a PR is ready or the task is done.`,
+                });
+
+                // Placeholder: replace with a step that creates a branch/PR or calls your agent API.
+                console.log(`Issue #${issue.number}: agent work (placeholder – replace with real agent step)`);
+
+                await octokit.issues.createComment({
+                  owner, repo, issue_number: issue.number,
+                  body: `✅ **Ticket handled.** When you wire the agent step to create a real PR, this comment will link it (e.g. "Done in PR #123").`,
+                });
+                await octokit.issues.removeLabel({ owner, repo, issue_number: issue.number, name: 'agent-in-progress' });
+                await octokit.issues.addLabels({ owner, repo, issue_number: issue.number, labels: ['agent-done'] });
+                console.log(`Issue #${issue.number}: marked done`);
+                return;
+              }
+            }
+            console.log('No issue needed an action this run.');
