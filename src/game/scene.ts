@@ -104,9 +104,9 @@ export class MainScene extends Phaser.Scene {
 
         // Dragging: follow pointer with grid snapping
         sprite.on('drag', (_pointer: Phaser.Input.Pointer, dragX: number, dragY: number) => {
-          // Snap to grid during drag
-          const snapGridX = Math.floor(dragX / TILE_SIZE);
-          const snapGridY = Math.floor(dragY / TILE_SIZE);
+          // Snap to grid during drag, clamping to valid grid bounds
+          const snapGridX = Math.max(0, Math.min(GRID_WIDTH - 1, Math.floor(dragX / TILE_SIZE)));
+          const snapGridY = Math.max(0, Math.min(GRID_HEIGHT - 1, Math.floor(dragY / TILE_SIZE)));
           const snapX = snapGridX * TILE_SIZE + TILE_SIZE / 2;
           const snapY = snapGridY * TILE_SIZE + TILE_SIZE / 2;
           sprite!.x = snapX;
