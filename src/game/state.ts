@@ -24,7 +24,7 @@ export interface BuildingDef {
 /** Catalog of all buildings. Order = display order. First is unlocked, rest locked. */
 export const BUILDING_CATALOG: BuildingDef[] = [
   { id: 'house', name: 'House', cost: 25, coinsPerSecond: 5, unlocked: true },
-  { id: 'shop', name: 'Shop', cost: 80, coinsPerSecond: 12, unlocked: false },
+  { id: 'shop', name: 'Shop', cost: 100, coinsPerSecond: 5, unlocked: true },
   { id: 'factory', name: 'Factory', cost: 200, coinsPerSecond: 30, unlocked: false },
 ];
 
