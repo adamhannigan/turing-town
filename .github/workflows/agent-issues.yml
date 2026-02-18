@@ -22,10 +22,10 @@ jobs:
         with:
           script: |
             const { owner, repo } = context.repo;
-            const octokit = github.rest;
+            const api = github.rest;
 
             // Open issues without agent-done, oldest first
-            const { data: issues } = await octokit.issues.listForRepo({
+            const { data: issues } = await api.issues.listForRepo({
               owner,
               repo,
               state: 'open',
@@ -49,8 +49,8 @@ jobs:
 
               // 1) Needs more detail: short body and not yet asked
               if (!bodyLong && !hasNeedsDetails) {
-                await octokit.issues.addLabels({ owner, repo, issue_number: issue.number, labels: ['needs-details'] });
-                await octokit.issues.createComment({
+                await api.issues.addLabels({ owner, repo, issue_number: issue.number, labels: ['needs-details'] });
+                await api.issues.createComment({
                   owner, repo, issue_number: issue.number,
                   body: `👋 Thanks for opening this issue. To help the agent implement it, please add a bit more detail:\n\n` +
                     `- **Bug:** Steps to reproduce, expected vs actual behavior, and environment (browser/OS).\n` +
@@ -63,13 +63,13 @@ jobs:
 
               // 2) Check if needs-details was satisfied by a comment
               if (hasNeedsDetails) {
-                const { data: comments } = await octokit.issues.listComments({ owner, repo, issue_number: issue.number });
+                const { data: comments } = await api.issues.listComments({ owner, repo, issue_number: issue.number });
                 const lastUserComment = comments.filter(c => !c.user?.login?.includes('[bot]')).pop();
                 const commentBody = (lastUserComment?.body || '').trim();
                 if (commentBody.length >= 40) {
-                  await octokit.issues.removeLabel({ owner, repo, issue_number: issue.number, name: 'needs-details' });
-                  await octokit.issues.addLabels({ owner, repo, issue_number: issue.number, labels: ['agent-acknowledged'] });
-                  await octokit.issues.createComment({
+                  await api.issues.removeLabel({ owner, repo, issue_number: issue.number, name: 'needs-details' });
+                  await api.issues.addLabels({ owner, repo, issue_number: issue.number, labels: ['agent-acknowledged'] });
+                  await api.issues.createComment({
                     owner, repo, issue_number: issue.number,
                     body: `✅ **Thanks for the details.** The agent will work on this. You'll get another update when work has started and when it's done.`,
                   });
@@ -81,8 +81,8 @@ jobs:
 
               // 3) Acknowledge: long body, not yet acknowledged
               if (bodyLong && !hasAck) {
-                await octokit.issues.addLabels({ owner, repo, issue_number: issue.number, labels: ['agent-acknowledged'] });
-                await octokit.issues.createComment({
+                await api.issues.addLabels({ owner, repo, issue_number: issue.number, labels: ['agent-acknowledged'] });
+                await api.issues.createComment({
                   owner, repo, issue_number: issue.number,
                   body: `✅ **Acknowledged.** The agent will work on this. You'll get another update when work has started and when it's done.`,
                 });
@@ -92,8 +92,8 @@ jobs:
 
               // 4) Run agent work: acknowledged and not yet in progress or done
               if (hasAck && !hasInProgress && !has(issue, 'agent-done')) {
-                await octokit.issues.addLabels({ owner, repo, issue_number: issue.number, labels: ['agent-in-progress'] });
-                await octokit.issues.createComment({
+                await api.issues.addLabels({ owner, repo, issue_number: issue.number, labels: ['agent-in-progress'] });
+                await api.issues.createComment({
                   owner, repo, issue_number: issue.number,
                   body: `🔧 **Working on this.** The agent is processing the issue. You'll get a follow-up when a PR is ready or the task is done.`,
                 });
@@ -101,12 +101,12 @@ jobs:
                 // Placeholder: replace with a step that creates a branch/PR or calls your agent API.
                 console.log(`Issue #${issue.number}: agent work (placeholder – replace with real agent step)`);
 
-                await octokit.issues.createComment({
+                await api.issues.createComment({
                   owner, repo, issue_number: issue.number,
                   body: `✅ **Ticket handled.** When you wire the agent step to create a real PR, this comment will link it (e.g. "Done in PR #123").`,
                 });
-                await octokit.issues.removeLabel({ owner, repo, issue_number: issue.number, name: 'agent-in-progress' });
-                await octokit.issues.addLabels({ owner, repo, issue_number: issue.number, labels: ['agent-done'] });
+                await api.issues.removeLabel({ owner, repo, issue_number: issue.number, name: 'agent-in-progress' });
+                await api.issues.addLabels({ owner, repo, issue_number: issue.number, labels: ['agent-done'] });
                 console.log(`Issue #${issue.number}: marked done`);
                 return;
               }
