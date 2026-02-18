@@ -121,7 +121,6 @@ export class MainScene extends Phaser.Scene {
         const x = gx;
         const y = gy;
         zone.on('pointerdown', () => {
-          console.log(`Zone clicked: grid(${x}, ${y})`);
           cellClickCallback?.(x, y);
         });
       }
