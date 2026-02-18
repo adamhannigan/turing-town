@@ -94,7 +94,6 @@ export class MainScene extends Phaser.Scene {
         sprite = this.add.sprite(px, py, entity.sprite!.key);
         sprite.setDisplaySize(TILE_SIZE - 8, TILE_SIZE - 8);
         sprite.setInteractive({ draggable: true, useHandCursor: true });
-        sprite.setData('entityId', id);
         
         // Drag start: store entity and original position
         sprite.on('dragstart', () => {
