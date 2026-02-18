@@ -27,6 +27,10 @@ export default function App() {
     if (ok) setState({ ...s });
   }, []);
 
+  const onDragStart = useCallback((_entityId: number, _gridX: number, _gridY: number) => {
+    // No-op callback needed to enable drag functionality
+  }, []);
+
   const onDragEnd = useCallback((entityId: number, toGridX: number, toGridY: number) => {
     const ok = moveBuilding(entityId, toGridX, toGridY);
     if (ok) {
@@ -36,9 +40,9 @@ export default function App() {
 
   useEffect(() => {
     if (!containerRef.current) return;
-    createPhaserGame(onCellClick, undefined, onDragEnd);
+    createPhaserGame(onCellClick, onDragStart, onDragEnd);
     return () => destroyPhaserGame();
-  }, [onCellClick, onDragEnd]);
+  }, [onCellClick, onDragStart, onDragEnd]);
 
   useEffect(() => {
     const interval = setInterval(() => {
