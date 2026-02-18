@@ -12,11 +12,12 @@ This folder holds prompts, context, and skills used by the GitHub Copilot Coding
 
 Agents that call external APIs use **GitHub repository secrets** (or local env vars when run outside Actions):
 
-| Secret / ENV              | Used by        | Purpose                    |
-|---------------------------|----------------|----------------------------|
-| `SCENARIO_API_KEY`        | `skills/images`| Scenario AI API key        |
-| `SCENARIO_API_SECRET`     | `skills/images`| Scenario AI API secret     |
-| `SCENARIO_MODEL_ID`       | `skills/images`| (Optional) Default model ID |
-| `GITHUB_TOKEN`            | Actions        | Issue/PR comments, branch  |
+| Secret / ENV              | Used by               | Purpose                                                                 |
+|---------------------------|-----------------------|-------------------------------------------------------------------------|
+| `COPILOT_ASSIGN_PAT`      | `agent-issues` workflow | Fine-grained PAT (Issues: R/W) from a **Copilot-licensed** user; used to assign ready issues to @copilot so the coding agent picks them up. |
+| `SCENARIO_API_KEY`        | `skills/images`       | Scenario AI API key                                                     |
+| `SCENARIO_API_SECRET`     | `skills/images`       | Scenario AI API secret                                                  |
+| `SCENARIO_MODEL_ID`       | `skills/images`       | (Optional) Default model ID                                             |
+| `GITHUB_TOKEN`            | Actions               | Issue/PR comments, branch                                               |
 
 Set these under **Settings → Secrets and variables → Actions** (or in your local environment).
