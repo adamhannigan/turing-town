@@ -68,6 +68,7 @@ jobs:
                     owner, repo, issue_number: issue.number,
                     body: `✅ **Thanks for the details.** The agent will work on this. You'll get another update when work has started and when it's done.`,
                   });
+                  core.setOutput('issue_number', String(issue.number));
                   console.log(`Issue #${issue.number}: acknowledged after comment`);
                   return;
                 }
@@ -80,6 +81,7 @@ jobs:
                   owner, repo, issue_number: issue.number,
                   body: `✅ **Acknowledged.** The agent will work on this. You'll get another update when work has started and when it's done.`,
                 });
+                core.setOutput('issue_number', String(issue.number));
                 console.log(`Issue #${issue.number}: acknowledged`);
                 return;
               }
