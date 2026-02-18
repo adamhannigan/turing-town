@@ -1,0 +1,46 @@
+# When a draft PR that references an issue (Fixes #N) is opened or updated, mark it ready for review.
+# Copilot often opens PRs as drafts; this lets auto-merge pick them up once checks pass.
+
+name: Mark Copilot PRs ready for review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  mark-ready:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mark draft PR as ready for review if it fixes an issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr.draft) return;
+
+            const body = (pr.body || '').trim();
+            const title = (pr.title || '').trim();
+            const text = body + ' ' + title;
+            if (!/(?:fixes?|closes?|resolves?)\s+#\d+/i.test(text)) return;
+
+            const { owner, repo } = context.repo;
+            const { repository } = await github.graphql(`
+              query($owner: String!, $repo: String!, $number: Int!) {
+                repository(owner: $owner, name: $repo) {
+                  pullRequest(number: $number) { id }
+                }
+              }
+            `, { owner, repo, number: pr.number });
+            const pullRequestId = repository.pullRequest.id;
+
+            await github.graphql(`
+              mutation($id: ID!) {
+                markPullRequestReadyForReview(input: { pullRequestId: $id }) {
+                  pullRequest { id isDraft }
+                }
+              }
+            `, { id: pullRequestId });
+            core.info('Marked PR #' + pr.number + ' as ready for review.');

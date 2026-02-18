@@ -15,9 +15,17 @@ Agents that call external APIs use **GitHub repository secrets** (or local env v
 | Secret / ENV              | Used by               | Purpose                                                                 |
 |---------------------------|-----------------------|-------------------------------------------------------------------------|
 | `COPILOT_ASSIGN_PAT`      | `agent-issues` workflow | Fine-grained PAT (Issues: R/W) from a **Copilot-licensed** user; used to assign ready issues to @copilot so the coding agent picks them up. |
+| `MERGE_PAT`               | `auto-merge-copilot-prs` | (Optional) PAT from a **repo admin** who can bypass "Require review" on `main`. If branch protection blocks the default token, set this so Copilot PRs can be auto-merged. |
 | `SCENARIO_API_KEY`        | `skills/images`       | Scenario AI API key                                                     |
 | `SCENARIO_API_SECRET`     | `skills/images`       | Scenario AI API secret                                                  |
 | `SCENARIO_MODEL_ID`       | `skills/images`       | (Optional) Default model ID                                             |
 | `GITHUB_TOKEN`            | Actions               | Issue/PR comments, branch                                               |
 
 Set these under **Settings → Secrets and variables → Actions** (or in your local environment).
+
+### Branch protection and auto-merge
+
+If **main** has "Require a pull request before merging" or "Require review from Code Owners", the default `GITHUB_TOKEN` cannot merge until someone approves. You can:
+
+1. **Allow bypass:** In **Settings → Branches → main → Edit** under "Allow specified actors to bypass required pull requests", add a user or team that will perform the merge (e.g. the user whose PAT you use for `MERGE_PAT`), or
+2. **Use MERGE_PAT:** Create a PAT from a repo admin, add it as the `MERGE_PAT` secret; the auto-merge workflow will use it and can merge without a review when that user has bypass.
