@@ -56,8 +56,47 @@ body {
 
 .actions {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 10px;
   flex-wrap: wrap;
+}
+
+.building-select-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.building-select-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #9ab89a;
+}
+
+.building-select {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #3a5a3a;
+  background: #1a2a1a;
+  color: #e8e8e8;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  min-width: 140px;
+}
+
+.building-select:hover:not(:disabled) {
+  border-color: #4a7c4a;
+}
+
+.building-select:focus {
+  outline: none;
+  border-color: #5a9c5a;
+  box-shadow: 0 0 0 2px rgba(90, 156, 90, 0.25);
+}
+
+.building-select option:disabled {
+  color: #6a6a6a;
 }
 
 .hud button {
@@ -72,25 +111,6 @@ body {
 
 .hud button:active {
   transform: scale(0.98);
-}
-
-.build-btn {
-  background: #4a7c4a;
-  color: #fff;
-}
-
-.build-btn:hover:not(:disabled) {
-  background: #5a9c5a;
-}
-
-.build-btn.active {
-  background: #2d6b2d;
-  outline: 2px solid #7acc7a;
-}
-
-.build-btn.disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 .collect-btn {

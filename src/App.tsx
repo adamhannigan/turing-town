@@ -22,8 +22,8 @@ export default function App() {
 
   const onCellClick = useCallback((gridX: number, gridY: number) => {
     const s = stateRef.current;
-    if (s.selectedBuilding !== 'house') return;
-    const ok = placeBuilding(s, gridX, gridY);
+    if (!s.selectedBuilding) return;
+    const ok = placeBuilding(s, s.selectedBuilding, gridX, gridY);
     if (ok) setState({ ...s });
   }, []);
 
@@ -47,12 +47,12 @@ export default function App() {
     setState({ ...stateRef.current });
   }, []);
 
-  const handleBuildModeToggle = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      selectedBuilding: prev.selectedBuilding === 'house' ? null : 'house',
-    }));
-  }, []);
+  const handleBuildingSelect = useCallback(
+    (id: import('@/game/state').BuildingTypeId | null) => {
+      setState((prev) => ({ ...prev, selectedBuilding: id }));
+    },
+    []
+  );
 
   const handleReset = useCallback(() => {
     resetGame(stateRef.current);
@@ -63,8 +63,8 @@ export default function App() {
     <div className="app">
       <HUD
         state={state}
+        onBuildingSelect={handleBuildingSelect}
         onCollect={handleCollect}
-        onBuildModeToggle={handleBuildModeToggle}
         onReset={handleReset}
       />
       <div ref={containerRef} id="game-container" className="game-container" />

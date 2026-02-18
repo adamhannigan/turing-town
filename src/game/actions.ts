@@ -5,20 +5,25 @@
 
 import { createEntity, queryEntities, clearWorld } from './ecs/world';
 import type { GameState } from './state';
+import type { BuildingTypeId } from './state';
 import {
   GRID_WIDTH,
   GRID_HEIGHT,
-  HOUSE_COST,
-  HOUSE_COINS_PER_SECOND,
   TILE_SIZE,
+  INITIAL_COINS,
+  getBuildingDef,
+  isBuildingUnlocked,
 } from './state';
 
 export function placeBuilding(
   state: GameState,
+  buildingTypeId: BuildingTypeId,
   gridX: number,
   gridY: number
 ): boolean {
-  if (state.coins < HOUSE_COST) return false;
+  const def = getBuildingDef(buildingTypeId);
+  if (!def || !isBuildingUnlocked(buildingTypeId)) return false;
+  if (state.coins < def.cost) return false;
   if (gridX < 0 || gridX >= GRID_WIDTH || gridY < 0 || gridY >= GRID_HEIGHT) {
     return false;
   }
@@ -27,7 +32,7 @@ export function placeBuilding(
   );
   if (existing) return false;
 
-  state.coins -= HOUSE_COST;
+  state.coins -= def.cost;
   const now = Date.now();
   createEntity({
     gridCell: { gridX, gridY },
@@ -36,12 +41,12 @@ export function placeBuilding(
       y: gridY * TILE_SIZE + TILE_SIZE / 2,
     },
     building: {
-      type: 'house',
+      type: buildingTypeId,
       accumulatedCoins: 0,
-      coinsPerSecond: HOUSE_COINS_PER_SECOND,
+      coinsPerSecond: def.coinsPerSecond,
       lastEarnTime: now,
     },
-    sprite: { key: 'house' },
+    sprite: { key: buildingTypeId },
   });
   return true;
 }
@@ -62,7 +67,7 @@ export function collectCoins(state: GameState): number {
 
 export function resetGame(state: GameState): void {
   clearWorld();
-  state.coins = 50;
+  state.coins = INITIAL_COINS;
   state.selectedBuilding = null;
   state.lastEcsUpdateTime = 0;
 }

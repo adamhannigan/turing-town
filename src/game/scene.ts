@@ -21,6 +21,12 @@ export class MainScene extends Phaser.Scene {
     super({ key: 'Main' });
   }
 
+  preload(): void {
+    this.load.image('house', '/assets/house.png');
+    this.load.image('shop', '/assets/shop.png');
+    this.load.image('factory', '/assets/factory.png');
+  }
+
   create(): void {
     this.gridGraphics = this.add.graphics();
     this.drawGrid();
@@ -59,24 +65,7 @@ export class MainScene extends Phaser.Scene {
     }
   }
 
-  private ensureBuildingTexture(): void {
-    if (!this.textures.exists('house')) {
-      const size = TILE_SIZE - 8;
-      const g = this.add.graphics();
-      g.fillStyle(0x8b4513, 1);
-      g.fillRoundedRect(4, 4, size, size, 4);
-      g.fillStyle(0x654321, 0.8);
-      g.fillRect(12, 12, size - 16, size - 24);
-      g.fillStyle(0x228b22, 0.9);
-      g.fillRect(14, size - 18, 8, 6);
-      g.fillRect(size - 22, size - 18, 8, 6);
-      g.generateTexture('house', size + 8, size + 8);
-      g.destroy();
-    }
-  }
-
   update(): void {
-    this.ensureBuildingTexture();
     const entities = getAllEntities();
     const withSprite = entities.filter((e) => e.gridCell && e.sprite);
     const seen = new Set<number>();

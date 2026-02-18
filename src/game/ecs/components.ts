@@ -17,7 +17,8 @@ export interface GridCell {
 
 /** Building occupies a cell and can produce coins */
 export interface Building {
-  type: 'house' | 'shop';
+  /** Building type id (matches state BUILDING_CATALOG and sprite key) */
+  type: string;
   /** Coins accumulated since last collect (visual only; actual coins in GameState) */
   accumulatedCoins: number;
   /** Coins per second this building generates */

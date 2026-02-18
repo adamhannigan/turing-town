@@ -5,7 +5,11 @@ A city-builder with endless possibilities. The game is driven by a living GitHub
 ## Project layout
 
 - **`src/`** – The playable game (TypeScript, React, Vite, Phaser, ECS). Agents can commit directly here.
-- **`Agents/`** – (Planned) Scripts, soul files, prompts and rules for agent-driven development.
+- **`agents/`** – Prompts, context (game rules), and skills for the GitHub Copilot Coding Agent and automation.
+  - `agents/context/` – Game rules and design doc agents must follow.
+  - `agents/prompts/` – Task templates (e.g. issue handling).
+  - `agents/skills/` – Scripts agents can run (e.g. `images.ts` for Scenario AI image generation).
+- **`.github/workflows/`** – GitHub Action that triages issues (ask for details, acknowledge, working on it, done). See `agents/README.md` for secrets (e.g. Scenario API, `GITHUB_TOKEN`).
 
 ## Run the game (SimCity v0.1)
 

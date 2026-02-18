@@ -1,0 +1,149 @@
+/**
+ * Scenario AI image generation skill.
+ * Use when an agent task is to create an image (e.g. building sprite, icon).
+ *
+ * ENV (GitHub Actions: set as repository secrets; locally: .env or export):
+ *   SCENARIO_API_KEY    – required
+ *   SCENARIO_API_SECRET – required
+ *   SCENARIO_MODEL_ID   – optional; default model for requestImage()
+ */
+
+const SCENARIO_BASE = "https://api.cloud.scenario.com/v1";
+const POLL_INTERVAL_MS = 2000;
+const POLL_MAX_ATTEMPTS = 60; // ~2 min
+
+export interface RequestImageOptions {
+  /** Text prompt for the image */
+  prompt: string;
+  /** Model ID (default: process.env.SCENARIO_MODEL_ID) */
+  modelId?: string;
+  /** Aspect ratio, e.g. "1:1", "16:9" */
+  aspectRatio?: string;
+  /** Width in pixels (if supported by model) */
+  width?: number;
+  /** Height in pixels (if supported by model) */
+  height?: number;
+  /** Extra body fields for model-specific params (from GET /models/{id}) */
+  extra?: Record<string, unknown>;
+}
+
+export interface RequestImageResult {
+  url: string;
+  assetId: string;
+  jobId: string;
+}
+
+function getAuthHeader(): string {
+  const key = process.env.SCENARIO_API_KEY;
+  const secret = process.env.SCENARIO_API_SECRET;
+  if (!key || !secret) {
+    throw new Error(
+      "Scenario API credentials missing. Set SCENARIO_API_KEY and SCENARIO_API_SECRET (e.g. GitHub repo secrets)."
+    );
+  }
+  const encoded = Buffer.from(`${key}:${secret}`).toString("base64");
+  return `Basic ${encoded}`;
+}
+
+async function pollJobUntilDone(jobId: string): Promise<{ assetIds: string[]; assets?: { assetId: string; url: string }[] }> {
+  const auth = getAuthHeader();
+  for (let i = 0; i < POLL_MAX_ATTEMPTS; i++) {
+    const res = await fetch(`${SCENARIO_BASE}/jobs/${jobId}`, {
+      headers: { Authorization: auth },
+    });
+    if (!res.ok) {
+      throw new Error(`Scenario jobs API error: ${res.status} ${await res.text()}`);
+    }
+    const data = (await res.json()) as {
+      status: string;
+      metadata?: { assetIds?: string[]; assets?: { assetId: string; url: string }[] };
+    };
+    if (data.status === "success") {
+      const assetIds = data.metadata?.assetIds ?? [];
+      const assets = data.metadata?.assets;
+      if (assetIds.length === 0 && (!assets || assets.length === 0)) {
+        throw new Error("Scenario job succeeded but no assets returned.");
+      }
+      return {
+        assetIds,
+        assets: data.metadata?.assets,
+      };
+    }
+    if (data.status === "failed" || data.status === "canceled") {
+      throw new Error(`Scenario job ended with status: ${data.status}`);
+    }
+    await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+  }
+  throw new Error("Scenario job polling timed out.");
+}
+
+/**
+ * Request a single image from Scenario AI (custom model).
+ * Uses SCENARIO_API_KEY, SCENARIO_API_SECRET, and optionally SCENARIO_MODEL_ID from env.
+ */
+export async function requestImage(options: RequestImageOptions): Promise<RequestImageResult> {
+  const modelId = options.modelId ?? process.env.SCENARIO_MODEL_ID;
+  if (!modelId) {
+    throw new Error(
+      "No model ID. Set SCENARIO_MODEL_ID in env or pass options.modelId (e.g. from Scenario dashboard)."
+    );
+  }
+
+  const body: Record<string, unknown> = {
+    prompt: options.prompt,
+    aspectRatio: options.aspectRatio ?? "1:1",
+    ...options.extra,
+  };
+  if (options.width != null) body.width = options.width;
+  if (options.height != null) body.height = options.height;
+
+  const res = await fetch(`${SCENARIO_BASE}/generate/custom/${modelId}`, {
+    method: "POST",
+    headers: {
+      Authorization: getAuthHeader(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Scenario generate API error: ${res.status} ${text}`);
+  }
+
+  const data = (await res.json()) as { job?: { jobId: string } };
+  const jobId = data.job?.jobId;
+  if (!jobId) {
+    throw new Error("Scenario API did not return a job ID.");
+  }
+
+  const { assetIds, assets } = await pollJobUntilDone(jobId);
+  const firstAssetId = assetIds[0] ?? assets?.[0]?.assetId;
+  const firstUrl = assets?.[0]?.url;
+
+  if (!firstAssetId) {
+    throw new Error("Scenario job produced no asset ID.");
+  }
+
+  // If job response doesn't include URL, fetch asset by ID (Scenario may have GET /assets/{id})
+  let url = firstUrl;
+  if (!url) {
+    try {
+      const assetRes = await fetch(`${SCENARIO_BASE}/assets/${firstAssetId}`, {
+        headers: { Authorization: getAuthHeader() },
+      });
+      if (assetRes.ok) {
+        const assetData = (await assetRes.json()) as { url?: string };
+        url = assetData.url;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return {
+    url: url ?? `https://api.cloud.scenario.com/v1/assets/${firstAssetId}`,
+    assetId: firstAssetId,
+    jobId,
+  };
+}
