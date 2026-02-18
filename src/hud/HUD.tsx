@@ -24,17 +24,19 @@ export function HUD({
     : null;
   const canAffordSelected =
     selectedDef && state.coins >= selectedDef.cost;
+  
+  const base = import.meta.env.BASE_URL;
 
   return (
     <div className="hud">
       <div className="hud-bar">
         <div className="coins">
-          <span className="coins-icon">🪙</span>
+          <img src={`${base}assets/icon-collect.png`} alt="Coins" className="coins-icon-img" />
           <span className="coins-value">{Math.floor(state.coins)}</span>
         </div>
         <div className="actions">
           <label className="building-select-wrap">
-            <span className="building-select-label">Building</span>
+            <img src={`${base}assets/icon-building.png`} alt="Building" className="icon-img" />
             <select
               className="building-select"
               value={state.selectedBuilding ?? ''}
@@ -68,6 +70,7 @@ export function HUD({
             Collect coins
           </button>
           <button type="button" className="reset-btn" onClick={onReset}>
+            <img src={`${base}assets/icon-reset.png`} alt="Reset" className="icon-img-inline" />
             Reset
           </button>
         </div>
