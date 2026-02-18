@@ -10,10 +10,9 @@ Use this when an agent picks up a GitHub issue (bug or incremental feature). The
    - For features: desired behavior, where it should appear (HUD, grid, new building type, etc.), and any constraints.
 3. Once details are sufficient (or for trivial fixes), create a branch (e.g. `issue-<number>-short-slug`) and implement in `src/` following **`agents/context/game-rules.md`**. Do not break the core loop (place → earn → collect → place more).
 4. **If the mechanic or change requires a new image** (new building, icon, tile, UI art):
-   - Generate the image using the **Scenario API** via **`agents/skills/images.ts`** (`requestImage`). **Use the correct model:** for **UI elements** (buttons, icons, HUD) use **`SCENARIO_MODEL_UI`**; for **game/Phaser assets** (buildings, roads, tiles) use **`SCENARIO_MODEL_GAME_ASSETS`** (isometric style). See `agents/skills/README.md` for usage. Ensure `SCENARIO_API_KEY` and `SCENARIO_API_SECRET` are configured (repo secrets or env).
-   - **Download** the image from the returned URL and **store it in the repo** under **`public/assets/`** (e.g. `public/assets/newbuilding.png`). Use PNG; dimensions appropriate for the game (e.g. 56×56 for building sprites).
-   - **Wire it in**: add the image in `src/game/scene.ts` preload (e.g. `this.load.image('newbuilding', baseUrl + 'assets/newbuilding.png')`) and reference the same key in the building catalog or ECS sprite. Commit the new asset file with the code change.
-   - If Scenario credentials are not available, add a placeholder PNG under `public/assets/` (or run `npm run generate-placeholders` and rename) and note in the PR that the asset should be replaced via Scenario once configured.
+   - **Building sprites:** Run **`npm run generate-images`** (or `npm run generate-images shop factory` for specific IDs). This uses Scenario and writes to **`public/assets/<id>.png`**. Do **not** use placeholders when this command succeeds. If it fails (e.g. missing `SCENARIO_API_KEY` / `SCENARIO_API_SECRET`), add a placeholder and note in the PR that assets should be replaced via Scenario once the **copilot** environment has those secrets.
+   - **UI elements** (buttons, icons, HUD): use **`agents/skills/images.ts`** with **`SCENARIO_MODEL_UI`** (`requestImage`); download from the returned URL and save to **`public/assets/`**.
+   - **Wire it in**: add the image in `src/game/scene.ts` preload and reference the same key in the building catalog or ECS sprite. Commit the new asset file with the code change.
 5. Open a PR targeting the default branch. In the PR description, reference the issue (e.g. `Fixes #123`). Mark ready for review when done.
 6. When the PR is merged, the issue will be commented and closed automatically.
 
@@ -27,7 +26,7 @@ Use this when an agent picks up a GitHub issue (bug or incremental feature). The
 
 | Step | Action |
 |------|--------|
-| 1 | Use `agents/skills/images.ts` → `requestImage({ prompt, modelId, width?, height? })`. **modelId:** `SCENARIO_MODEL_UI` for UI elements; `SCENARIO_MODEL_GAME_ASSETS` for buildings/roads/tiles (isometric). |
-| 2 | Save the image to **`public/assets/<name>.png`** in the repo (download from result URL). |
+| 1 | **Buildings:** Run **`npm run generate-images`** (or with IDs, e.g. `npm run generate-images shop`). **UI:** Use `requestImage` with `SCENARIO_MODEL_UI` from `agents/skills/images.ts`. |
+| 2 | Ensure the image is in **`public/assets/<name>.png`** (script writes there; for UI, download from result URL). |
 | 3 | In `src/game/scene.ts` preload: `this.load.image('<key>', baseUrl + 'assets/<name>.png')`. |
 | 4 | Use the same `<key>` in the building catalog or ECS sprite component. |

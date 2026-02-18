@@ -6,9 +6,9 @@ Scripts and tools that agents (e.g. GitHub Copilot) run when handling issues.
 
 **Purpose:** Generate images for the game (buildings, icons, tiles) via Scenario API. When an issue or mechanic **requires a new image**, agents must:
 
-1. Call this skill with the **correct model** (see below).
-2. **Store the image in the repo** under **`public/assets/<name>.png`** (download from the returned URL).
-3. Wire it in via `src/game/scene.ts` preload and the building catalog or ECS.
+1. **Building sprites:** Run **`npm run generate-images`** (see `scripts/generate-images.ts`). It uses this skill with the isometric model and writes to **`public/assets/<id>.png`**. Prefer this over calling `requestImage` directly so Scenario is always used when credentials are available.
+2. **UI or other assets:** Call this skill with the **correct model** (see below); **store** the image under **`public/assets/<name>.png`** (download from the returned URL).
+3. Wire assets in via `src/game/scene.ts` preload and the building catalog or ECS.
 
 **Which model to use:**
 

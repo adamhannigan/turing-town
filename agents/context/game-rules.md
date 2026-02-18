@@ -47,14 +47,14 @@ If a change breaks this loop (e.g. placement no longer costs coins, or coins nev
 
 When a mechanic or change **requires a new image** (e.g. new building sprite, icon, tile):
 
-1. **Generate** the image using the **Scenario API** via `agents/skills/images.ts`:
-   - **UI elements** (buttons, icons, HUD art): use **`SCENARIO_MODEL_UI`** (`model_mcYj5uGzXteUw6tKapsaDgBP`). Example: `requestImage({ prompt: "...", modelId: SCENARIO_MODEL_UI, ... })`.
-   - **Game/Phaser assets** (buildings, roads, tiles): use **`SCENARIO_MODEL_GAME_ASSETS`** (`model_nB7x6dxqtxtmFDm8tdFdv9xP`). This is an **isometric** model matching our gameplay style. Example: `requestImage({ prompt: "isometric ...", modelId: SCENARIO_MODEL_GAME_ASSETS, ... })`.
-   - Use a clear prompt; for buildings/tiles mention "isometric" when using the game-asset model. Ensure `SCENARIO_API_KEY` and `SCENARIO_API_SECRET` are set (repo secrets or env).
-2. **Store** the generated image in the repo under **`public/assets/`** (e.g. `public/assets/buildingname.png`). Download from the returned URL and commit the file. Use PNG; size should match game use (e.g. 56×56 or 64×64 for buildings to match `TILE_SIZE`).
+1. **Generate** the image:
+   - **Building sprites (catalog buildings):** Run the repo script **`npm run generate-images`** (or `npm run generate-images house shop factory` for specific IDs). It uses Scenario (isometric model), writes to **`public/assets/<id>.png`**, and requires `SCENARIO_API_KEY` and `SCENARIO_API_SECRET` (e.g. in the repo’s **copilot** environment so the agent has them). Do **not** use placeholders when this script can run successfully.
+   - **UI elements** (buttons, icons, HUD): use **`agents/skills/images.ts`** with **`SCENARIO_MODEL_UI`**: `requestImage({ prompt: "...", modelId: SCENARIO_MODEL_UI, ... })`. Download from the returned URL.
+   - **Other game assets** (e.g. roads, tiles): use **`SCENARIO_MODEL_GAME_ASSETS`** (isometric) in `requestImage`; download and save to **`public/assets/`**.
+2. **Store** the generated image in the repo under **`public/assets/`** (e.g. `public/assets/buildingname.png`). Use PNG; size should match game use (e.g. 56×56 for buildings to match `TILE_SIZE`).
 3. **Use** the asset in the game: add `this.load.image('key', baseUrl + 'assets/buildingname.png')` in `src/game/scene.ts` preload, and reference the same key in the building catalog / ECS sprite component.
 
-Do not add placeholder-only art when the task asks for real assets: generate via Scenario, save to `public/assets/`, then wire it in. If Scenario credentials are not available, add a placeholder PNG and note in the PR that the asset should be replaced via Scenario once configured.
+Only if Scenario credentials are **not** available (e.g. script fails or env missing): add a placeholder PNG and note in the PR that the asset should be replaced via Scenario once configured.
 
 ## Out of scope for v1
 

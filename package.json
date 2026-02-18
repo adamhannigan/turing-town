@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "generate-placeholders": "node scripts/generate-placeholders.mjs"
+    "generate-placeholders": "node scripts/generate-placeholders.mjs",
+    "generate-images": "tsx scripts/generate-images.ts"
   },
   "dependencies": {
     "phaser": "^3.80.1",
@@ -15,11 +16,13 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@types/node": "^22.10.1",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.3",
     "pureimage": "^0.4.18",
     "typescript": "~5.6.2",
-    "vite": "^5.4.10"
+    "vite": "^5.4.10",
+    "tsx": "^4.19.2"
   }
 }

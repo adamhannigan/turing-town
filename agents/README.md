@@ -16,12 +16,21 @@ Agents that call external APIs use **GitHub repository secrets** (or local env v
 |---------------------------|-----------------------|-------------------------------------------------------------------------|
 | `COPILOT_ASSIGN_PAT`      | `agent-issues` workflow | Fine-grained PAT (Issues: R/W) from a **Copilot-licensed** user; used to assign ready issues to @copilot so the coding agent picks them up. |
 | `MERGE_PAT`               | `auto-merge-copilot-prs` | (Optional) PAT from a **repo admin** who can bypass "Require review" on `main`. If branch protection blocks the default token, set this so Copilot PRs can be auto-merged. |
-| `SCENARIO_API_KEY`        | `skills/images`       | Scenario AI API key                                                     |
-| `SCENARIO_API_SECRET`     | `skills/images`       | Scenario AI API secret                                                  |
+| `SCENARIO_API_KEY`        | `skills/images`, `npm run generate-images` | Scenario AI API key                                                     |
+| `SCENARIO_API_SECRET`     | `skills/images`, `npm run generate-images` | Scenario AI API secret                                                  |
 | `SCENARIO_MODEL_ID`       | `skills/images`       | (Optional) Default model ID                                             |
 | `GITHUB_TOKEN`            | Actions               | Issue/PR comments, branch                                               |
 
 Set these under **Settings → Secrets and variables → Actions** (or in your local environment).
+
+### Copilot coding agent and Scenario (image generation)
+
+For the **GitHub Copilot coding agent** to generate images (buildings, UI) via Scenario instead of placeholders, it must have `SCENARIO_API_KEY` and `SCENARIO_API_SECRET` in its environment. Configure them in the **`copilot` environment**:
+
+1. **Settings → Environments** → create or open the **copilot** environment.
+2. Add **Environment secrets**: `SCENARIO_API_KEY`, `SCENARIO_API_SECRET`.
+
+See [Customize the agent environment](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/customize-the-agent-environment#setting-environment-variables-in-copilots-environment). The repo’s `.github/workflows/copilot-setup-steps.yml` installs dependencies so the agent can run `npm run generate-images`.
 
 ### Auto-merge and branch protection
 
