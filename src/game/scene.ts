@@ -22,9 +22,10 @@ export class MainScene extends Phaser.Scene {
   }
 
   preload(): void {
-    this.load.image('house', '/assets/house.png');
-    this.load.image('shop', '/assets/shop.png');
-    this.load.image('factory', '/assets/factory.png');
+    const base = import.meta.env.BASE_URL;
+    this.load.image('house', `${base}assets/house.png`);
+    this.load.image('shop', `${base}assets/shop.png`);
+    this.load.image('factory', `${base}assets/factory.png`);
   }
 
   create(): void {

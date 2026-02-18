@@ -22,9 +22,18 @@ Open the URL shown (e.g. http://localhost:5173).
 
 ### Core loop
 
-1. **Place** – Click “Build House (25)” then click a grid tile to place a building.
+1. **Place** – Choose a building from the dropdown (House is unlocked), then click a grid tile to place it.
 2. **Earn** – Buildings generate coins over time.
 3. **Collect** – Click “Collect coins” to add earned coins to your balance.
 4. **Place more** – Use coins to build more houses and grow your town.
 
 Progress resets on every browser refresh.
+
+## Play on GitHub Pages
+
+The game deploys to GitHub Pages on every push to `main`.
+
+1. **One-time setup:** In the repo go to **Settings → Pages**. Under “Build and deployment”, set **Source** to **GitHub Actions**.
+2. After the next push to `main`, the workflow builds and deploys. Then open:
+   - **https://&lt;your-username&gt;.github.io/turing-town/**  
+   (or **https://&lt;org&gt;.github.io/turing-town/** if the repo is under an organization)
