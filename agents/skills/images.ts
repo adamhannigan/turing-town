@@ -65,22 +65,28 @@ async function pollJobUntilDone(jobId: string): Promise<{ assetIds: string[]; as
       throw new Error(`Scenario jobs API error: ${res.status} ${await res.text()}`);
     }
     const data = (await res.json()) as {
-      status: string;
-      metadata?: { assetIds?: string[]; assets?: { assetId: string; url: string }[] };
+      job?: {
+        status: string;
+        metadata?: { assetIds?: string[]; assets?: { assetId: string; url: string }[] };
+      };
     };
-    if (data.status === "success") {
-      const assetIds = data.metadata?.assetIds ?? [];
-      const assets = data.metadata?.assets;
+    const job = data.job;
+    if (!job) {
+      throw new Error("Scenario API response missing job object");
+    }
+    if (job.status === "success") {
+      const assetIds = job.metadata?.assetIds ?? [];
+      const assets = job.metadata?.assets;
       if (assetIds.length === 0 && (!assets || assets.length === 0)) {
         throw new Error("Scenario job succeeded but no assets returned.");
       }
       return {
         assetIds,
-        assets: data.metadata?.assets,
+        assets: job.metadata?.assets,
       };
     }
-    if (data.status === "failed" || data.status === "canceled") {
-      throw new Error(`Scenario job ended with status: ${data.status}`);
+    if (job.status === "failed" || job.status === "canceled") {
+      throw new Error(`Scenario job ended with status: ${job.status}`);
     }
     await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
   }
@@ -88,7 +94,7 @@ async function pollJobUntilDone(jobId: string): Promise<{ assetIds: string[]; as
 }
 
 /**
- * Request a single image from Scenario AI (custom model).
+ * Request a single image from Scenario AI (public or custom model).
  * Uses SCENARIO_API_KEY, SCENARIO_API_SECRET, and optionally SCENARIO_MODEL_ID from env.
  */
 export async function requestImage(options: RequestImageOptions): Promise<RequestImageResult> {
@@ -99,15 +105,26 @@ export async function requestImage(options: RequestImageOptions): Promise<Reques
     );
   }
 
-  const body: Record<string, unknown> = {
+  // Build parameters for the inference request
+  // Note: width/height constraints: must be between 128-2048 and multiples of 8, or omit for defaults
+  const parameters: Record<string, unknown> = {
+    type: "txt2img",
     prompt: options.prompt,
-    aspectRatio: options.aspectRatio ?? "1:1",
+    numSamples: 1,
     ...options.extra,
   };
-  if (options.width != null) body.width = options.width;
-  if (options.height != null) body.height = options.height;
+  
+  // Only include width/height if they meet API requirements (128-2048, multiple of 8)
+  if (options.width != null && options.width >= 128 && options.width <= 2048 && options.width % 8 === 0) {
+    parameters.width = options.width;
+  }
+  if (options.height != null && options.height >= 128 && options.height <= 2048 && options.height % 8 === 0) {
+    parameters.height = options.height;
+  }
 
-  const res = await fetch(`${SCENARIO_BASE}/generate/custom/${modelId}`, {
+  const body = { parameters };
+
+  const res = await fetch(`${SCENARIO_BASE}/models/${modelId}/inferences`, {
     method: "POST",
     headers: {
       Authorization: getAuthHeader(),
@@ -135,7 +152,7 @@ export async function requestImage(options: RequestImageOptions): Promise<Reques
     throw new Error("Scenario job produced no asset ID.");
   }
 
-  // If job response doesn't include URL, fetch asset by ID (Scenario may have GET /assets/{id})
+  // If job response doesn't include URL, fetch asset by ID
   let url = firstUrl;
   if (!url) {
     try {
@@ -143,8 +160,8 @@ export async function requestImage(options: RequestImageOptions): Promise<Reques
         headers: { Authorization: getAuthHeader() },
       });
       if (assetRes.ok) {
-        const assetData = (await assetRes.json()) as { url?: string };
-        url = assetData.url;
+        const assetData = (await assetRes.json()) as { asset?: { url?: string } };
+        url = assetData.asset?.url;
       }
     } catch {
       // ignore
