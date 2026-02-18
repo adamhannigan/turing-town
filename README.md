@@ -10,6 +10,7 @@ A city-builder with endless possibilities. The game is driven by a living GitHub
   - `agents/prompts/` – Task templates (e.g. issue handling).
   - `agents/skills/` – Scripts agents can run (e.g. `images.ts` for Scenario AI image generation).
 - **`.github/workflows/`** – GitHub Action that triages issues (ask for details, acknowledge, working on it, done). See `agents/README.md` for secrets (e.g. Scenario API, `GITHUB_TOKEN`).
+- **`docs/`** – Documentation for developers (see [GENERATING_IMAGES.md](docs/GENERATING_IMAGES.md) for AI image generation setup).
 
 ## Run the game (SimCity v0.1)
 
