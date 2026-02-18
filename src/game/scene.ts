@@ -102,10 +102,15 @@ export class MainScene extends Phaser.Scene {
           dragStartCallback?.(id, gridX, gridY);
         });
 
-        // Dragging: follow pointer
+        // Dragging: follow pointer with grid snapping
         sprite.on('drag', (_pointer: Phaser.Input.Pointer, dragX: number, dragY: number) => {
-          sprite!.x = dragX;
-          sprite!.y = dragY;
+          // Snap to grid during drag
+          const snapGridX = Math.floor(dragX / TILE_SIZE);
+          const snapGridY = Math.floor(dragY / TILE_SIZE);
+          const snapX = snapGridX * TILE_SIZE + TILE_SIZE / 2;
+          const snapY = snapGridY * TILE_SIZE + TILE_SIZE / 2;
+          sprite!.x = snapX;
+          sprite!.y = snapY;
         });
 
         // Drag end: determine target cell and finalize move
