@@ -10,6 +10,12 @@ on:
     types: [opened, edited]
   issue_comment:
     types: [created]
+  # Run manually from Actions tab to verify the workflow is loaded
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
 
 env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
