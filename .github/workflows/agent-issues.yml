@@ -94,7 +94,7 @@ jobs:
             console.log('No issue needed an action this run.');
 
       - name: Assign issue to Copilot
-        if: steps.triage.outputs.issue_number != '' && secrets.COPILOT_ASSIGN_PAT != ''
+        if: steps.triage.outputs.issue_number != ''
         env:
           GH_TOKEN: ${{ secrets.COPILOT_ASSIGN_PAT }}
           ISSUE_NUMBER: ${{ steps.triage.outputs.issue_number }}
