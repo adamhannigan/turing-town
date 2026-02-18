@@ -23,9 +23,8 @@ Agents that call external APIs use **GitHub repository secrets** (or local env v
 
 Set these under **Settings → Secrets and variables → Actions** (or in your local environment).
 
-### Branch protection and auto-merge
+### Auto-merge and branch protection
 
-If **main** has "Require a pull request before merging" or "Require review from Code Owners", the default `GITHUB_TOKEN` cannot merge until someone approves. You can:
+With **Allow auto-merge** enabled (Settings → General → Pull Requests), the workflow **enables auto-merge** on Copilot PRs that fix an issue. GitHub then merges the PR when conditions are met (e.g. checks pass, required approval). You don’t need `MERGE_PAT` for this.
 
-1. **Allow bypass:** In **Settings → Branches → main → Edit** under "Allow specified actors to bypass required pull requests", add a user or team that will perform the merge (e.g. the user whose PAT you use for `MERGE_PAT`), or
-2. **Use MERGE_PAT:** Create a PAT from a repo admin, add it as the `MERGE_PAT` secret; the auto-merge workflow will use it and can merge without a review when that user has bypass.
+When a PR is merged, **On merged – close issue** runs and comments on the linked issue, adds `agent-done`, and closes the issue.

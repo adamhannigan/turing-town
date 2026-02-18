@@ -1,0 +1,43 @@
+# When a PR that fixes an issue is merged, comment on the issue and close it.
+
+name: On merged – close issue
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  issues: write
+
+jobs:
+  close-issue:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    steps:
+      - name: Comment and close linked issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const body = (pr.body || '').trim();
+            const title = (pr.title || '').trim();
+            const text = body + ' ' + title;
+            const match = text.match(/(?:fixes?|closes?|resolves?)\s+#(\d+)/i);
+            if (!match) return;
+            const issueNumber = parseInt(match[1], 10);
+
+            const { owner, repo } = context.repo;
+            await github.rest.issues.createComment({
+              owner, repo, issue_number: issueNumber,
+              body: '✅ **Done.** Merged in PR #' + pr.number + '.',
+            });
+            await github.rest.issues.removeLabel({
+              owner, repo, issue_number: issueNumber, name: 'agent-in-progress',
+            }).catch(() => {});
+            await github.rest.issues.addLabels({
+              owner, repo, issue_number: issueNumber, labels: ['agent-done'],
+            });
+            await github.rest.issues.update({
+              owner, repo, issue_number: issueNumber, state: 'closed',
+            });
+            core.info('Closed issue #' + issueNumber + ' (merged PR #' + pr.number + ').');

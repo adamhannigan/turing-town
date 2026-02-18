@@ -1,9 +1,6 @@
-# When a PR that references an issue (e.g. "Fixes #1") is ready and mergeable, merge it and close the issue.
-# Runs every 5 minutes and when PRs are updated.
-#
-# Branch protection: If "Require a pull request before merging" or "Require review" blocks merges,
-# either add your merge user to "Allow specified actors to bypass required pull requests" in
-# Settings → Branches → main → Edit, or set MERGE_PAT to a PAT from a user who has bypass.
+# When a PR that references an issue (e.g. "Fixes #1") is ready, enable GitHub auto-merge.
+# With "Allow auto-merge" enabled in repo settings, GitHub will merge when checks (and reviews) pass.
+# When the PR is actually merged, on-merged-close-issue.yml will comment and close the issue.
 
 name: Auto-merge Copilot PRs
 
@@ -14,19 +11,16 @@ on:
     types: [opened, synchronize]
 
 permissions:
-  contents: write
   pull-requests: write
-  issues: write
+  contents: read
 
 jobs:
-  merge:
+  enable-auto-merge:
     runs-on: ubuntu-latest
     steps:
-      - name: Find and merge one mergeable PR that fixes an issue
+      - name: Enable auto-merge on PRs that fix an issue
         uses: actions/github-script@v7
         with:
-          # Use MERGE_PAT (repo admin PAT) if branch protection requires approval, so merge bypasses it
-          token: ${{ secrets.MERGE_PAT || secrets.GITHUB_TOKEN }}
           script: |
             const { owner, repo } = context.repo;
             const api = github.rest;
@@ -46,27 +40,26 @@ jobs:
               if (!issueNumber) continue;
 
               const { data: full } = await api.pulls.get({ owner, repo, pull_number: pr.number });
-              if (full.draft) continue; // only merge when marked ready for review (not draft)
-              if (full.mergeable !== true || full.mergeable_state !== 'clean') continue;
+              if (full.draft) continue;
 
-              await api.pulls.merge({
-                owner, repo, pull_number: pr.number, merge_method: 'merge',
-              });
-            core.info(`Merged PR #${pr.number} (Fixes #${issueNumber})`);
+              const { repository } = await github.graphql(`
+                query($owner: String!, $repo: String!, $number: Int!) {
+                  repository(owner: $owner, name: $repo) {
+                    pullRequest(number: $number) { id autoMergeRequest { enabledAt } }
+                  }
+                }
+              `, { owner, repo, number: pr.number });
+              const pullRequestId = repository.pullRequest.id;
+              if (repository.pullRequest.autoMergeRequest?.enabledAt) continue;
 
-              await api.issues.createComment({
-                owner, repo, issue_number: issueNumber,
-                body: `✅ **Done.** Merged in PR #${pr.number}.`,
-              });
-              await api.issues.removeLabel({
-                owner, repo, issue_number: issueNumber, name: 'agent-in-progress',
-              }).catch(() => {});
-              await api.issues.addLabels({
-                owner, repo, issue_number: issueNumber, labels: ['agent-done'],
-              });
-              await api.issues.update({
-                owner, repo, issue_number: issueNumber, state: 'closed',
-              });
+              await github.graphql(`
+                mutation($id: ID!) {
+                  enablePullRequestAutoMerge(input: { pullRequestId: $id, mergeMethod: MERGE }) {
+                    pullRequest { autoMergeRequest { enabledAt } }
+                  }
+                }
+              `, { id: pullRequestId });
+            core.info('Enabled auto-merge on PR #' + pr.number + ' (Fixes #' + issueNumber + ').');
               return;
             }
-            core.info('No mergeable PR found this run.');
+            core.info('No PR needed auto-merge this run.');
