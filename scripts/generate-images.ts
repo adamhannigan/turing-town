@@ -5,7 +5,7 @@
  * Requires: SCENARIO_API_KEY, SCENARIO_API_SECRET (e.g. in Copilot's "copilot" environment).
  */
 
-import { requestImage, SCENARIO_MODEL_GAME_ASSETS } from "../agents/skills/images.js";
+import { requestImage, removeBackground, SCENARIO_MODEL_GAME_ASSETS } from "../agents/skills/images.js";
 import { BUILDING_CATALOG } from "../src/game/state.js";
 import fs from "fs";
 import path from "path";
@@ -40,7 +40,9 @@ async function main(): Promise<void> {
         height: size,
         aspectRatio: "1:1",
       });
-      await downloadToFile(result.url, outPath);
+      console.log(`  Generated initial image, removing background...`);
+      const bgRemovedResult = await removeBackground(result.assetId);
+      await downloadToFile(bgRemovedResult.url, outPath);
       console.log(`  -> ${outPath}`);
     } catch (err) {
       console.error(`  Failed:`, err);
