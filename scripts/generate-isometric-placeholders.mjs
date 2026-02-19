@@ -179,6 +179,61 @@ function createShop(size) {
 }
 
 /**
+ * Draw an isometric factory building
+ */
+function createFactory(size) {
+  const canvas = PureImage.make(size, size);
+  const ctx = canvas.getContext('2d');
+  
+  // Fill background with transparency
+  ctx.fillStyle = 'rgba(0,0,0,0)';
+  ctx.fillRect(0, 0, size, size);
+  
+  const centerX = size / 2;
+  const centerY = size / 2;
+  
+  // Draw base (floor) - isometric diamond
+  drawIsometricTile(ctx, centerX, centerY + 10, size - 16, 12, '#6b6b6b');
+  
+  // Draw walls - left side (darker)
+  ctx.fillStyle = '#4a5f7f';
+  ctx.beginPath();
+  ctx.moveTo(centerX, centerY - 10);
+  ctx.lineTo(centerX - (size - 16) / 2, centerY + 10);
+  ctx.lineTo(centerX - (size - 16) / 2, centerY + 2);
+  ctx.lineTo(centerX, centerY - 18);
+  ctx.closePath();
+  ctx.fill();
+  
+  // Draw walls - right side (lighter)
+  ctx.fillStyle = '#5a6f8f';
+  ctx.beginPath();
+  ctx.moveTo(centerX, centerY - 10);
+  ctx.lineTo(centerX + (size - 16) / 2, centerY + 10);
+  ctx.lineTo(centerX + (size - 16) / 2, centerY + 2);
+  ctx.lineTo(centerX, centerY - 18);
+  ctx.closePath();
+  ctx.fill();
+  
+  // Draw smokestacks
+  ctx.fillStyle = '#3a3a3a';
+  ctx.fillRect(centerX - 8, centerY - 22, 5, 8);
+  ctx.fillRect(centerX + 3, centerY - 24, 5, 10);
+  
+  // Add smoke puffs
+  ctx.fillStyle = 'rgba(100,100,100,0.6)';
+  ctx.fillRect(centerX - 6, centerY - 26, 3, 4);
+  ctx.fillRect(centerX + 5, centerY - 28, 3, 4);
+  
+  // Add windows
+  ctx.fillStyle = '#ffcc00';
+  ctx.fillRect(centerX - 6, centerY - 2, 4, 4);
+  ctx.fillRect(centerX + 2, centerY - 2, 4, 4);
+  
+  return canvas;
+}
+
+/**
  * Draw a collect coins icon
  */
 function createCollectIcon(size) {
@@ -316,18 +371,23 @@ async function generateAssets() {
   const shop = createShop(64);
   await saveCanvas(shop, resolve(assetsDir, 'shop.png'));
   
+  // Generate factory
+  console.log('4. Generating isometric factory...');
+  const factory = createFactory(64);
+  await saveCanvas(factory, resolve(assetsDir, 'factory.png'));
+  
   // Generate collect icon
-  console.log('4. Generating collect icon...');
+  console.log('5. Generating collect icon...');
   const collect = createCollectIcon(48);
   await saveCanvas(collect, resolve(assetsDir, 'icon-collect.png'));
   
   // Generate reset icon
-  console.log('5. Generating reset icon...');
+  console.log('6. Generating reset icon...');
   const reset = createResetIcon(48);
   await saveCanvas(reset, resolve(assetsDir, 'icon-reset.png'));
   
   // Generate building icon
-  console.log('6. Generating building icon...');
+  console.log('7. Generating building icon...');
   const building = createBuildingIcon(48);
   await saveCanvas(building, resolve(assetsDir, 'icon-building.png'));
   
