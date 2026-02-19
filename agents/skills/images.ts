@@ -43,6 +43,12 @@ export interface RequestImageResult {
   jobId: string;
 }
 
+export interface RemoveBackgroundResult {
+  url: string;
+  assetId: string;
+  jobId: string;
+}
+
 function getAuthHeader(): string {
   const key = process.env.SCENARIO_API_KEY;
   const secret = process.env.SCENARIO_API_SECRET;
@@ -150,6 +156,73 @@ export async function requestImage(options: RequestImageOptions): Promise<Reques
 
   if (!firstAssetId) {
     throw new Error("Scenario job produced no asset ID.");
+  }
+
+  // If job response doesn't include URL, fetch asset by ID
+  let url = firstUrl;
+  if (!url) {
+    try {
+      const assetRes = await fetch(`${SCENARIO_BASE}/assets/${firstAssetId}`, {
+        headers: { Authorization: getAuthHeader() },
+      });
+      if (assetRes.ok) {
+        const assetData = (await assetRes.json()) as { asset?: { url?: string } };
+        url = assetData.asset?.url;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return {
+    url: url ?? `https://api.cloud.scenario.com/v1/assets/${firstAssetId}`,
+    assetId: firstAssetId,
+    jobId,
+  };
+}
+
+/**
+ * Remove background from an existing asset using Scenario API.
+ * Uses the model_bria-remove-background model via the custom generation endpoint.
+ * @param assetId The asset ID of the image to remove background from
+ * @returns RemoveBackgroundResult with URL to the new asset without background
+ */
+export async function removeBackground(assetId: string): Promise<RemoveBackgroundResult> {
+  const modelId = "model_bria-remove-background";
+  
+  const body = {
+    parameters: {
+      image: assetId,
+      preserveAlpha: true,
+    },
+  };
+
+  const res = await fetch(`${SCENARIO_BASE}/generate/custom/${modelId}`, {
+    method: "POST",
+    headers: {
+      Authorization: getAuthHeader(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Scenario remove background API error: ${res.status} ${text}`);
+  }
+
+  const data = (await res.json()) as { job?: { jobId: string } };
+  const jobId = data.job?.jobId;
+  if (!jobId) {
+    throw new Error("Scenario API did not return a job ID for background removal.");
+  }
+
+  const { assetIds, assets } = await pollJobUntilDone(jobId);
+  const firstAssetId = assetIds[0] ?? assets?.[0]?.assetId;
+  const firstUrl = assets?.[0]?.url;
+
+  if (!firstAssetId) {
+    throw new Error("Scenario background removal job produced no asset ID.");
   }
 
   // If job response doesn't include URL, fetch asset by ID
