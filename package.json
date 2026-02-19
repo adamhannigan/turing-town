@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "generate-placeholders": "node scripts/generate-placeholders.mjs",
-    "generate-images": "tsx scripts/generate-images.ts"
+    "generate-images": "tsx scripts/generate-images.ts",
+    "generate-hud-icons": "tsx scripts/generate-hud-icons.ts"
   },
   "dependencies": {
     "phaser": "^3.80.1",
