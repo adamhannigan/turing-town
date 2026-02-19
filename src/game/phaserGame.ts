@@ -5,18 +5,17 @@
 
 import Phaser from 'phaser';
 import { MainScene, setCellClickCallback, setDragCallbacks } from './scene';
-import { GRID_WIDTH, GRID_HEIGHT, TILE_SIZE } from './state';
 
 const CONFIG: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
-  width: GRID_WIDTH * TILE_SIZE,
-  height: GRID_HEIGHT * TILE_SIZE,
+  width: window.innerWidth,
+  height: window.innerHeight,
   parent: 'game-container',
   backgroundColor: '#2d5016',
   pixelArt: false,
   scale: {
-    mode: Phaser.Scale.FIT,
-    autoCenter: Phaser.Scale.CENTER_BOTH,
+    mode: Phaser.Scale.RESIZE,
+    autoCenter: Phaser.Scale.NO_CENTER,
   },
   scene: [MainScene],
   physics: {

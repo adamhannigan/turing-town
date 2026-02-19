@@ -14,20 +14,29 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 12px;
+  align-items: stretch;
+  padding: 0;
+  overflow: hidden;
 }
 
 .app {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 12px;
+  align-items: stretch;
+  gap: 0;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .hud {
   width: 100%;
-  max-width: 512px;
+  max-width: 600px;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  padding: 12px;
 }
 
 .hud-bar {
@@ -159,15 +168,13 @@ body {
 
 .game-container {
   width: 100%;
-  max-width: 512px;
-  border-radius: 12px;
+  height: 100%;
+  flex: 1;
   overflow: hidden;
-  border: 2px solid #3a5a3a;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 .game-container canvas {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
 }
