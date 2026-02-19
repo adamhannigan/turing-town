@@ -10,7 +10,7 @@ export const TILE_SIZE = 64;
 export const INITIAL_COINS = 50;
 
 /** Building type id (must match sprite keys in public/assets and catalog) */
-export type BuildingTypeId = 'house' | 'shop' | 'factory' | 'tree' | 'fountain';
+export type BuildingTypeId = 'house' | 'shop' | 'factory' | 'tree' | 'fountain' | 'road';
 
 export interface BuildingDef {
   id: BuildingTypeId;
@@ -32,6 +32,7 @@ export const BUILDING_CATALOG: BuildingDef[] = [
   { id: 'factory', name: 'Factory', cost: 200, coinsPerSecond: 30, unlocked: false },
   { id: 'tree', name: 'Tree', cost: 10, coinsPerSecond: 0, unlocked: true },
   { id: 'fountain', name: 'Fountain', cost: 75, coinsPerSecond: 2, unlocked: true },
+  { id: 'road', name: 'Road', cost: 5, coinsPerSecond: 0, unlocked: true },
 ];
 
 export function getBuildingDef(id: BuildingTypeId): BuildingDef | undefined {
