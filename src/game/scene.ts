@@ -131,8 +131,9 @@ export class MainScene extends Phaser.Scene {
         sprite = this.add.sprite(px, py + ISO_TILE_HEIGHT / 2, entity.sprite!.key);
         // Use full isometric tile width and make buildings proportional
         sprite.setDisplaySize(ISO_TILE_WIDTH, ISO_TILE_WIDTH);
-        // Anchor sprite at bottom center for proper isometric alignment
-        sprite.setOrigin(0.5, 1.0);
+        // Anchor sprite at 88% from top to align building base with grid base
+        // This accounts for the visual base of buildings within the sprite
+        sprite.setOrigin(0.5, 0.88);
         sprite.setInteractive({ draggable: true, useHandCursor: true });
         
         // Set depth based on grid position for proper layering
