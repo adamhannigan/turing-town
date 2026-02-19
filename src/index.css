@@ -69,6 +69,26 @@ body {
   object-fit: contain;
 }
 
+.population {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #9ab89a;
+}
+
+.population-label {
+  font-size: 0.85rem;
+  color: #7a9a7a;
+}
+
+.population-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #e8e8e8;
+}
+
 .icon-img {
   width: 20px;
   height: 20px;
