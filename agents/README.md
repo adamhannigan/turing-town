@@ -37,3 +37,5 @@ See [Customize the agent environment](https://docs.github.com/en/copilot/how-tos
 With **Allow auto-merge** enabled (Settings → General → Pull Requests), the workflow **enables auto-merge** on Copilot PRs that fix an issue. GitHub then merges the PR when conditions are met (e.g. checks pass, required approval). You don’t need `MERGE_PAT` for this.
 
 When a PR is merged, **On merged – close issue** runs and comments on the linked issue, adds `agent-done`, and closes the issue.
+
+**Setup checklist:** See [.github/COPILOT-AUTO-MERGE-SETUP.md](../.github/COPILOT-AUTO-MERGE-SETUP.md) for the exact repo settings needed so Copilot PRs are merged when ready.
