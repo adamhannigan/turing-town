@@ -34,7 +34,7 @@ export function placeBuilding(
 
   state.coins -= def.cost;
   const now = Date.now();
-  createEntity({
+  const entity: Partial<import('./ecs/components').Entity> = {
     gridCell: { gridX, gridY },
     position: {
       x: gridX * TILE_SIZE + TILE_SIZE / 2,
@@ -47,7 +47,18 @@ export function placeBuilding(
       lastEarnTime: now,
     },
     sprite: { key: buildingTypeId },
-  });
+  };
+  
+  // Add population component if building has population capacity
+  if (def.populationCapacity && def.populationCapacity > 0) {
+    entity.population = {
+      current: 0,
+      max: def.populationCapacity,
+      taxPerPersonPerSecond: def.taxPerPersonPerSecond || 0,
+    };
+  }
+  
+  createEntity(entity);
   return true;
 }
 
@@ -104,4 +115,5 @@ export function resetGame(state: GameState): void {
   state.coins = INITIAL_COINS;
   state.selectedBuilding = null;
   state.lastEcsUpdateTime = 0;
+  state.totalPopulation = 0;
 }

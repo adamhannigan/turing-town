@@ -34,6 +34,10 @@ export function HUD({
           <img src={`${base}assets/icon-collect.png`} alt="Coins" className="coins-icon-img" />
           <span className="coins-value">{Math.floor(state.coins)}</span>
         </div>
+        <div className="population">
+          <span className="population-label">Population:</span>
+          <span className="population-value">{state.totalPopulation}</span>
+        </div>
         <div className="actions">
           <label className="building-select-wrap">
             <img src={`${base}assets/icon-building.png`} alt="Building" className="icon-img" />

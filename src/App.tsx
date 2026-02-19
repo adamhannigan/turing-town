@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPhaserGame, destroyPhaserGame } from '@/game/phaserGame';
 import { createInitialState, type GameState } from '@/game/state';
 import { runCoinAccumulator } from '@/game/ecs/systems/coinAccumulator';
+import { runPopulationGrowth } from '@/game/ecs/systems/populationGrowth';
 import { placeBuilding, collectCoins, resetGame, moveBuilding } from '@/game/actions';
 import { HUD } from '@/hud/HUD';
 import '@/index.css';
@@ -47,6 +48,7 @@ export default function App() {
   useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
+      runPopulationGrowth(stateRef.current);
       runCoinAccumulator(stateRef.current, now);
       setState((prev) => ({ ...prev, lastEcsUpdateTime: now }));
     }, ECS_UPDATE_INTERVAL_MS);

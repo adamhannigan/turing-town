@@ -33,11 +33,22 @@ export interface Sprite {
   frame?: string;
 }
 
+/** Population living in a building */
+export interface Population {
+  /** Current number of people */
+  current: number;
+  /** Maximum capacity */
+  max: number;
+  /** Tax per person per second */
+  taxPerPersonPerSecond: number;
+}
+
 export type ComponentMap = {
   position: Position;
   gridCell: GridCell;
   building: Building;
   sprite: Sprite;
+  population: Population;
 };
 
 export type Entity = {
