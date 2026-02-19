@@ -5,7 +5,7 @@
 
 import Phaser from 'phaser';
 import { getAllEntities } from './ecs/world';
-import { GRID_WIDTH, GRID_HEIGHT, TILE_SIZE } from './state';
+import { GRID_WIDTH, GRID_HEIGHT } from './state';
 import { gridToScreen, screenToGrid, getGridOffset, ISO_TILE_WIDTH, ISO_TILE_HEIGHT } from './isometric';
 
 let cellClickCallback: ((gridX: number, gridY: number) => void) | null = null;
@@ -125,8 +125,12 @@ export class MainScene extends Phaser.Scene {
 
       let sprite = this.buildingSprites.get(id);
       if (!sprite) {
-        sprite = this.add.sprite(px, py, entity.sprite!.key);
-        sprite.setDisplaySize(TILE_SIZE - 8, TILE_SIZE - 8);
+        // Position sprite so its bottom aligns with the bottom of the isometric tile
+        sprite = this.add.sprite(px, py + ISO_TILE_HEIGHT / 2, entity.sprite!.key);
+        // Use full isometric tile width and make buildings proportional
+        sprite.setDisplaySize(ISO_TILE_WIDTH, ISO_TILE_WIDTH);
+        // Anchor sprite at bottom center for proper isometric alignment
+        sprite.setOrigin(0.5, 1.0);
         sprite.setInteractive({ draggable: true, useHandCursor: true });
         
         // Set depth based on grid position for proper layering
@@ -144,7 +148,7 @@ export class MainScene extends Phaser.Scene {
           // Convert screen position to grid position
           const gridPos = screenToGrid(
             dragX - this.gridOffset.x,
-            dragY - this.gridOffset.y
+            dragY - this.gridOffset.y - ISO_TILE_HEIGHT / 2
           );
           
           // Clamp to valid grid bounds
@@ -154,7 +158,7 @@ export class MainScene extends Phaser.Scene {
           // Convert back to screen position
           const snapScreen = gridToScreen(snapGridX, snapGridY);
           sprite!.x = this.gridOffset.x + snapScreen.x;
-          sprite!.y = this.gridOffset.y + snapScreen.y;
+          sprite!.y = this.gridOffset.y + snapScreen.y + ISO_TILE_HEIGHT / 2;
         });
 
         // Drag end: determine target cell and finalize move
@@ -162,7 +166,7 @@ export class MainScene extends Phaser.Scene {
           // Use the sprite's current position (already snapped during drag)
           const gridPos = screenToGrid(
             sprite!.x - this.gridOffset.x,
-            sprite!.y - this.gridOffset.y
+            sprite!.y - this.gridOffset.y - ISO_TILE_HEIGHT / 2
           );
           sprite!.setAlpha(1);
           
@@ -176,7 +180,7 @@ export class MainScene extends Phaser.Scene {
       } else {
         // Only update position if not currently being dragged
         if (this.draggedEntity !== id) {
-          sprite.setPosition(px, py);
+          sprite.setPosition(px, py + ISO_TILE_HEIGHT / 2);
           sprite.setDepth(gridX + gridY);
         }
         sprite.setTexture(entity.sprite!.key);
