@@ -29,7 +29,6 @@ export class MainScene extends Phaser.Scene {
   private buildingSprites = new Map<number, Phaser.GameObjects.Sprite>();
   private draggedEntity: number | null = null;
   private gridOffset!: { x: number; y: number };
-  private grassTiles: Phaser.GameObjects.Image[] = [];
 
   constructor() {
     super({ key: 'Main' });
@@ -37,7 +36,6 @@ export class MainScene extends Phaser.Scene {
 
   preload(): void {
     const base = import.meta.env.BASE_URL;
-    this.load.image('grass-tile', `${base}assets/grass-tile.png`);
     this.load.image('house', `${base}assets/house.png`);
     this.load.image('shop', `${base}assets/shop.png`);
     this.load.image('factory', `${base}assets/factory.png`);
@@ -47,27 +45,12 @@ export class MainScene extends Phaser.Scene {
     const { width, height } = this.cameras.main;
     this.gridOffset = getGridOffset(GRID_WIDTH, GRID_HEIGHT, width, height);
     
-    this.drawGrassTiles();
+    // Apply 2x zoom to the camera
+    this.cameras.main.setZoom(2);
+    
     this.gridGraphics = this.add.graphics();
     this.drawGrid();
     this.createZones();
-  }
-
-  private drawGrassTiles(): void {
-    // Draw grass tiles for the entire grid
-    for (let gy = 0; gy < GRID_HEIGHT; gy++) {
-      for (let gx = 0; gx < GRID_WIDTH; gx++) {
-        const screenPos = gridToScreen(gx, gy);
-        const tile = this.add.image(
-          this.gridOffset.x + screenPos.x,
-          this.gridOffset.y + screenPos.y,
-          'grass-tile'
-        );
-        tile.setDisplaySize(ISO_TILE_WIDTH, ISO_TILE_HEIGHT);
-        tile.setDepth(-1); // Behind everything
-        this.grassTiles.push(tile);
-      }
-    }
   }
 
   private drawGrid(): void {
@@ -175,10 +158,11 @@ export class MainScene extends Phaser.Scene {
         });
 
         // Drag end: determine target cell and finalize move
-        sprite.on('dragend', (pointer: Phaser.Input.Pointer) => {
+        sprite.on('dragend', (_pointer: Phaser.Input.Pointer) => {
+          // Use the sprite's current position (already snapped during drag)
           const gridPos = screenToGrid(
-            pointer.x - this.gridOffset.x,
-            pointer.y - this.gridOffset.y
+            sprite!.x - this.gridOffset.x,
+            sprite!.y - this.gridOffset.y
           );
           sprite!.setAlpha(1);
           

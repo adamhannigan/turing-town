@@ -34,7 +34,7 @@ async function main(): Promise<void> {
     console.log(`Generating ${id} (${name}) -> ${outPath} ...`);
     try {
       const result = await requestImage({
-        prompt: `isometric pixel art ${name.toLowerCase()} building, ${size}x${size}, game asset, clear silhouette`,
+        prompt: `isometric pixel art ${name.toLowerCase()} building, ${size}x${size}, game asset, clear silhouette, transparent background`,
         modelId: SCENARIO_MODEL_GAME_ASSETS,
         width: size,
         height: size,
