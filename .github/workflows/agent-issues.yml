@@ -1,10 +1,11 @@
-# Runs every minute: triages open issues, assigns ready ones to Copilot.
+# Runs on issue open, every minute, or manually: triages open issues, assigns ready ones to Copilot.
 # Requires secret COPILOT_ASSIGN_PAT (Fine-grained PAT with Issues: R/W, from a Copilot-licensed user).
-# Also run manually from Actions tab via "Run workflow".
 
 name: Agent – Issue handling
 
 on:
+  issues:
+    types: [opened]
   schedule:
     - cron: '* * * * *'
   workflow_dispatch:
