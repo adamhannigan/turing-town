@@ -183,21 +183,18 @@ export async function requestImage(options: RequestImageOptions): Promise<Reques
 
 /**
  * Remove background from an existing asset using Scenario API.
- * Uses the model_bria-remove-background model via the custom generation endpoint.
+ * Uses the deprecated /generate/remove-background endpoint.
  * @param assetId The asset ID of the image to remove background from
  * @returns RemoveBackgroundResult with URL to the new asset without background
  */
 export async function removeBackground(assetId: string): Promise<RemoveBackgroundResult> {
-  const modelId = "model_bria-remove-background";
-  
   const body = {
-    parameters: {
-      image: assetId,
-      preserveAlpha: true,
-    },
+    image: assetId,
+    format: "png",
+    backgroundColor: "transparent",
   };
 
-  const res = await fetch(`${SCENARIO_BASE}/generate/custom/${modelId}`, {
+  const res = await fetch(`${SCENARIO_BASE}/generate/remove-background`, {
     method: "POST",
     headers: {
       Authorization: getAuthHeader(),
