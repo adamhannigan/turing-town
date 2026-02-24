@@ -472,3 +472,35 @@ body {
 .quest-claim-btn:active {
   transform: scale(0.98);
 }
+
+/* ─── Synergy Panel ─── */
+
+.synergy-panel {
+  padding-top: 6px;
+  border-top: 1px solid #2a4a2a;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.synergy-panel-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #00e5ff;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.synergy-list {
+  margin: 0;
+  padding: 0 0 0 14px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.synergy-item {
+  font-size: 0.8rem;
+  color: #9ab89a;
+}

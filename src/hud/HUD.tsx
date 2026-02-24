@@ -25,6 +25,8 @@ interface HUDProps {
   onEntityDeselect: () => void;
   quests: ActiveQuestDisplay[];
   onQuestClaim: (questId: string) => void;
+  /** Active adjacency synergy descriptions for the selected building */
+  synergies?: string[];
 }
 
 export function HUD({
@@ -37,6 +39,7 @@ export function HUD({
   onEntityDeselect,
   quests,
   onQuestClaim,
+  synergies = [],
 }: HUDProps) {
   const selectedDef = state.selectedBuilding
     ? getBuildingDef(state.selectedBuilding)
@@ -162,6 +165,16 @@ export function HUD({
               <span className="upgrade-maxed">✦ Max Level!</span>
             )}
           </div>
+          {synergies.length > 0 && (
+            <div className="synergy-panel">
+              <span className="synergy-panel-label">⚡ Synergies</span>
+              <ul className="synergy-list">
+                {synergies.map((s) => (
+                  <li key={s} className="synergy-item">{s}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
       {quests.length > 0 && (
