@@ -29,3 +29,21 @@ export function runCoinAccumulator(_state: GameState, now: number): void {
     building.lastEarnTime = now;
   }
 }
+
+/**
+ * Calculate the total income per in-game day based on current building states.
+ * Includes tax income from populated buildings and base income from other buildings.
+ */
+export function calculateIncomePerDay(secondsPerDay: number): number {
+  const buildings = queryEntities('building', 'gridCell');
+  let incomePerSecond = 0;
+  for (const entity of buildings) {
+    if (entity.population) {
+      const pop = entity.population;
+      incomePerSecond += pop.current * pop.taxPerPersonPerSecond;
+    } else {
+      incomePerSecond += entity.building?.coinsPerSecond ?? 0;
+    }
+  }
+  return incomePerSecond * secondsPerDay;
+}

@@ -38,6 +38,10 @@ export function HUD({
           <span className="population-label">Population:</span>
           <span className="population-value">{state.totalPopulation}</span>
         </div>
+        <div className="tax-revenue">
+          <span className="tax-revenue-label">Revenue/day:</span>
+          <span className="tax-revenue-value">{Math.floor(state.incomePerDay)}</span>
+        </div>
         <div className="actions">
           <label className="building-select-wrap">
             <img src={`${base}assets/icon-building.png`} alt="Building" className="icon-img" />

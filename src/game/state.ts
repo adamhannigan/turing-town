@@ -9,6 +9,9 @@ export const TILE_SIZE = 64;
 
 export const INITIAL_COINS = 50;
 
+/** Number of real-time seconds that constitute one in-game "day" */
+export const SECONDS_PER_DAY = 60;
+
 /** Building type id (must match sprite keys in public/assets and catalog) */
 export type BuildingTypeId = 'house' | 'shop' | 'factory' | 'tree' | 'fountain' | 'road';
 
@@ -48,6 +51,8 @@ export interface GameState {
   selectedBuilding: BuildingTypeId | null;
   lastEcsUpdateTime: number;
   totalPopulation: number;
+  /** Total income (taxes + building earnings) per in-game day */
+  incomePerDay: number;
 }
 
 export function createInitialState(): GameState {
@@ -56,5 +61,6 @@ export function createInitialState(): GameState {
     selectedBuilding: null,
     lastEcsUpdateTime: 0,
     totalPopulation: 0,
+    incomePerDay: 0,
   };
 }
