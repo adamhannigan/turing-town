@@ -16,6 +16,7 @@ import {
   MAX_UPGRADE_LEVEL,
   getUpgradeCost,
   getUpgradedEarnings,
+  createInitialResources,
 } from './state';
 import { createInitialQuestState } from './quests';
 
@@ -137,6 +138,7 @@ export function resetGame(state: GameState): void {
   state.totalCoinsCollected = 0;
   state.totalBuildingsPlaced = 0;
   state.totalUpgradesApplied = 0;
+  state.resources = createInitialResources();
   const initial = createInitialQuestState();
   state.quests = initial.quests;
   state.nextQuestIndex = initial.nextQuestIndex;

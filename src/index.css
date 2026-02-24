@@ -312,6 +312,45 @@ body {
   color: #ffd700;
 }
 
+/* ─── Resources Bar ─── */
+
+.resources-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+  padding: 8px 14px;
+  background: #1e2e1e;
+  border-radius: 10px;
+  border: 1px solid #3a5a3a;
+}
+
+.resource-item {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: #243824;
+  border-radius: 6px;
+  padding: 3px 7px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: 1px solid #3a5a3a;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.resource-icon {
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.resource-value {
+  color: #e8e8e8;
+  min-width: 22px;
+  text-align: right;
+}
+
 /* ─── Quest Panel ─── */
 
 .quests-panel {
