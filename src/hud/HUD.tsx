@@ -4,7 +4,7 @@
 
 import type { GameState } from '@/game/state';
 import type { BuildingTypeId } from '@/game/state';
-import { BUILDING_CATALOG, getBuildingDef, MAX_UPGRADE_LEVEL, getUpgradeCost } from '@/game/state';
+import { BUILDING_CATALOG, getBuildingDef, MAX_UPGRADE_LEVEL, getUpgradeCost, ALL_RESOURCE_TYPES, RESOURCE_DEFS } from '@/game/state';
 import type { Entity } from '@/game/ecs/components';
 import type { QuestDef, QuestProgress } from '@/game/quests';
 
@@ -109,6 +109,22 @@ export function HUD({
             Reset
           </button>
         </div>
+      </div>
+      <div className="resources-bar">
+        {ALL_RESOURCE_TYPES.map((type) => {
+          const def = RESOURCE_DEFS[type];
+          const value = type === 'money'
+            ? Math.floor(state.coins)
+            : type === 'population'
+            ? state.totalPopulation
+            : Math.floor(state.resources?.[type] ?? 0);
+          return (
+            <div key={type} className="resource-item" title={def.name}>
+              <span className="resource-icon">{def.icon}</span>
+              <span className="resource-value">{value}</span>
+            </div>
+          );
+        })}
       </div>
       {state.selectedBuilding && (
         <p className="hint">

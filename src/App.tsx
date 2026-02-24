@@ -8,6 +8,7 @@ import { createPhaserGame, destroyPhaserGame } from '@/game/phaserGame';
 import { createInitialState, type GameState, SECONDS_PER_DAY } from '@/game/state';
 import { runCoinAccumulator, calculateIncomePerDay } from '@/game/ecs/systems/coinAccumulator';
 import { runPopulationGrowth } from '@/game/ecs/systems/populationGrowth';
+import { runResourceAccumulator } from '@/game/ecs/systems/resourceAccumulator';
 import { placeBuilding, collectCoins, resetGame, moveBuilding, upgradeBuilding, collectBuildingCoins } from '@/game/actions';
 import { getEntity } from '@/game/ecs/world';
 import { saveGame, loadGame, clearSave } from '@/game/storage';
@@ -73,9 +74,16 @@ export default function App() {
       const now = Date.now();
       runPopulationGrowth(stateRef.current);
       runCoinAccumulator(stateRef.current, now);
+      const deltaSeconds = ECS_UPDATE_INTERVAL_MS / 1000;
+      runResourceAccumulator(stateRef.current, deltaSeconds);
       const incomePerDay = calculateIncomePerDay(SECONDS_PER_DAY);
       setState((prev) => {
-        const updated = { ...prev, lastEcsUpdateTime: now, incomePerDay };
+        const updated = {
+          ...prev,
+          lastEcsUpdateTime: now,
+          incomePerDay,
+          resources: { ...stateRef.current.resources },
+        };
         // Update quest completion status
         const questValues = {
           totalCoinsCollected: updated.totalCoinsCollected,
