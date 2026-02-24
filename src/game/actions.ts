@@ -3,7 +3,7 @@
  * Mutates ECS world and game state.
  */
 
-import { createEntity, queryEntities, clearWorld } from './ecs/world';
+import { createEntity, queryEntities, clearWorld, getEntity } from './ecs/world';
 import type { GameState } from './state';
 import type { BuildingTypeId } from './state';
 import {
@@ -13,6 +13,9 @@ import {
   INITIAL_COINS,
   getBuildingDef,
   isBuildingUnlocked,
+  MAX_UPGRADE_LEVEL,
+  getUpgradeCost,
+  getUpgradedEarnings,
 } from './state';
 
 export function placeBuilding(
@@ -45,6 +48,7 @@ export function placeBuilding(
       accumulatedCoins: 0,
       coinsPerSecond: def.coinsPerSecond,
       lastEarnTime: now,
+      upgradeLevel: 0,
     },
     sprite: { key: buildingTypeId },
   };
@@ -116,4 +120,39 @@ export function resetGame(state: GameState): void {
   state.selectedBuilding = null;
   state.lastEcsUpdateTime = 0;
   state.totalPopulation = 0;
+}
+
+/**
+ * Upgrade a placed building by entity id.
+ * Deducts the upgrade cost from state.coins and increases earnings.
+ * Returns true if the upgrade succeeded.
+ */
+export function upgradeBuilding(state: GameState, entityId: number): boolean {
+  const entity = getEntity(entityId);
+  if (!entity?.building) return false;
+
+  const def = getBuildingDef(entity.building.type as BuildingTypeId);
+  if (!def) return false;
+
+  const currentLevel = entity.building.upgradeLevel ?? 0;
+  if (currentLevel >= MAX_UPGRADE_LEVEL) return false;
+
+  const cost = getUpgradeCost(def, currentLevel);
+  if (state.coins < cost) return false;
+
+  state.coins -= cost;
+  entity.building.upgradeLevel = currentLevel + 1;
+
+  // Recalculate coinsPerSecond based on new level
+  entity.building.coinsPerSecond = getUpgradedEarnings(def.coinsPerSecond, entity.building.upgradeLevel);
+
+  // Update tax rate for population buildings
+  if (entity.population && def.taxPerPersonPerSecond) {
+    entity.population.taxPerPersonPerSecond = getUpgradedEarnings(
+      def.taxPerPersonPerSecond,
+      entity.building.upgradeLevel
+    );
+  }
+
+  return true;
 }

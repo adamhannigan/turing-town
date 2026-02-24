@@ -46,6 +46,19 @@ export function isBuildingUnlocked(id: BuildingTypeId): boolean {
   return getBuildingDef(id)?.unlocked ?? false;
 }
 
+/** Maximum upgrade level for any building */
+export const MAX_UPGRADE_LEVEL = 5;
+
+/** Coins required to upgrade a building from its current level to the next */
+export function getUpgradeCost(def: BuildingDef, currentLevel: number): number {
+  return Math.floor(def.cost * Math.pow(2, currentLevel + 1));
+}
+
+/** Coins per second (or tax rate) after applying upgrade levels (+50% per level) */
+export function getUpgradedEarnings(base: number, level: number): number {
+  return base * (1 + level * 0.5);
+}
+
 export interface GameState {
   coins: number;
   selectedBuilding: BuildingTypeId | null;
