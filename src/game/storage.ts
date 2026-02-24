@@ -5,7 +5,7 @@
 import type { GameState } from './state';
 import type { Entity } from './ecs/components';
 import type { QuestProgress } from './quests';
-import type { Resources } from './state';
+import type { Resources, NaturalResourceType } from './state';
 import { getAllEntities } from './ecs/world';
 
 const STORAGE_KEY = 'turing-town-save';
@@ -18,6 +18,7 @@ interface SaveData {
     quests?: QuestProgress[];
     nextQuestIndex?: number;
     resources?: Resources;
+    resourceAbundance?: Record<NaturalResourceType, number>;
   };
   entities: Entity[];
 }
@@ -35,6 +36,7 @@ export function saveGame(state: GameState): void {
       quests: state.quests,
       nextQuestIndex: state.nextQuestIndex,
       resources: state.resources,
+      resourceAbundance: state.resourceAbundance,
     },
     entities: getAllEntities(),
   };

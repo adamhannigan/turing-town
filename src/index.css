@@ -340,6 +340,16 @@ body {
   cursor: default;
 }
 
+.resource-item.resource-low {
+  border-color: #cc7700;
+  background: #2e2a1a;
+}
+
+.resource-item.resource-depleted {
+  border-color: #cc2222;
+  background: #2e1a1a;
+}
+
 .resource-icon {
   font-size: 0.9rem;
   line-height: 1;
@@ -349,6 +359,12 @@ body {
   color: #e8e8e8;
   min-width: 22px;
   text-align: right;
+}
+
+.resource-abundance {
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-left: 2px;
 }
 
 /* ─── Quest Panel ─── */

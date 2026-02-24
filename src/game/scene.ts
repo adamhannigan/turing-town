@@ -14,6 +14,7 @@ import {
   ISO_TILE_HEIGHT,
 } from "./isometric";
 import { getAdjacencyMultiplier } from "./adjacency";
+import type { NaturalResourceType } from "./state";
 
 let cellClickCallback: ((gridX: number, gridY: number) => void) | null = null;
 let dragStartCallback:
@@ -24,6 +25,9 @@ let dragEndCallback:
   | null = null;
 let entityClickCallback: ((entityId: number) => void) | null = null;
 let collectBuildingCallback: ((entityId: number) => void) | null = null;
+
+/** Current natural resource abundance for depletion visuals */
+let currentAbundance: Partial<Record<NaturalResourceType, number>> = {};
 
 export function setCellClickCallback(
   cb: (gridX: number, gridY: number) => void
@@ -47,8 +51,24 @@ export function setCollectBuildingCallback(cb: (entityId: number) => void): void
   collectBuildingCallback = cb;
 }
 
+export function setResourceAbundanceData(data: Record<NaturalResourceType, number>): void {
+  currentAbundance = data;
+}
+
 /** Gold tints applied to upgraded buildings, indexed by upgrade level */
 const UPGRADE_TINTS = [0xffffff, 0xffe8b0, 0xffd700, 0xffc800, 0xffb000, 0xffa000];
+
+/** Maps building type to the natural resource it depletes */
+const BUILDING_DEPLETES_RESOURCE: Partial<Record<string, NaturalResourceType>> = {
+  tree:        'wood',
+  farm:        'food',
+  fountain:    'water',
+  water_tower: 'water',
+  mine:        'stone',
+};
+
+/** Abundance threshold below which the depletion warning is shown */
+const DEPLETION_WARNING_THRESHOLD = 0.4;
 
 /** Pixels per upgrade star character in the label (used for synergy label positioning) */
 const STAR_WIDTH_PX = 8;
@@ -63,6 +83,7 @@ export class MainScene extends Phaser.Scene {
   private upgradeLabels = new Map<number, Phaser.GameObjects.Text>();
   private synergyLabels = new Map<number, Phaser.GameObjects.Text>();
   private coinIndicators = new Map<number, Phaser.GameObjects.Image>();
+  private depletionLabels = new Map<number, Phaser.GameObjects.Text>();
   private draggedEntity: number | null = null;
   private gridOffset!: { x: number; y: number };
 
@@ -82,6 +103,7 @@ export class MainScene extends Phaser.Scene {
     this.load.image("water_tower", `${base}assets/water_tower.png`);
     this.load.image("power_plant", `${base}assets/power_plant.png`);
     this.load.image("mine", `${base}assets/mine.png`);
+    this.load.image("park", `${base}assets/park.png`);
     this.load.image("coin-icon", `${base}assets/icon-collect.png`);
   }
 
@@ -344,6 +366,30 @@ export class MainScene extends Phaser.Scene {
         const indicator = this.coinIndicators.get(id);
         if (indicator) indicator.setVisible(false);
       }
+
+      // Depletion indicator: show warning above buildings whose natural resource is low
+      const depletedRes = BUILDING_DEPLETES_RESOURCE[entity.building?.type ?? ''];
+      const abundance = depletedRes !== undefined ? (currentAbundance[depletedRes] ?? 1) : 1;
+      if (depletedRes !== undefined && abundance < DEPLETION_WARNING_THRESHOLD) {
+        let depletionLabel = this.depletionLabels.get(id);
+        if (!depletionLabel) {
+          depletionLabel = this.add.text(0, 0, '⚠', {
+            fontSize: BUILDING_LABEL_FONT_SIZE,
+            color: abundance < 0.15 ? '#ff2222' : '#ff9900',
+            stroke: '#000000',
+            strokeThickness: 2,
+          });
+          depletionLabel.setOrigin(0.5, 1);
+          this.depletionLabels.set(id, depletionLabel);
+        }
+        depletionLabel.setColor(abundance < 0.15 ? '#ff2222' : '#ff9900');
+        depletionLabel.setPosition(px + ISO_TILE_WIDTH / 2, py - 8);
+        depletionLabel.setDepth(gridX + gridY + 15);
+        depletionLabel.setVisible(true);
+      } else {
+        const depletionLabel = this.depletionLabels.get(id);
+        if (depletionLabel) depletionLabel.setVisible(false);
+      }
     }
 
     for (const [id, sprite] of this.buildingSprites) {
@@ -364,6 +410,11 @@ export class MainScene extends Phaser.Scene {
         if (indicator) {
           indicator.destroy();
           this.coinIndicators.delete(id);
+        }
+        const depletionLabel = this.depletionLabels.get(id);
+        if (depletionLabel) {
+          depletionLabel.destroy();
+          this.depletionLabels.delete(id);
         }
       }
     }
