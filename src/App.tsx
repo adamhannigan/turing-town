@@ -8,7 +8,7 @@ import { createPhaserGame, destroyPhaserGame } from '@/game/phaserGame';
 import { createInitialState, type GameState, SECONDS_PER_DAY } from '@/game/state';
 import { runCoinAccumulator, calculateIncomePerDay } from '@/game/ecs/systems/coinAccumulator';
 import { runPopulationGrowth } from '@/game/ecs/systems/populationGrowth';
-import { placeBuilding, collectCoins, resetGame, moveBuilding, upgradeBuilding } from '@/game/actions';
+import { placeBuilding, collectCoins, resetGame, moveBuilding, upgradeBuilding, collectBuildingCoins } from '@/game/actions';
 import { getEntity } from '@/game/ecs/world';
 import { saveGame, loadGame, clearSave } from '@/game/storage';
 import { restoreEntities } from '@/game/ecs/world';
@@ -56,11 +56,16 @@ export default function App() {
     setSelectedEntityId((prev) => (prev === entityId ? null : entityId));
   }, []);
 
+  const onBuildingCollect = useCallback((entityId: number) => {
+    collectBuildingCoins(stateRef.current, entityId);
+    setState({ ...stateRef.current });
+  }, []);
+
   useEffect(() => {
     if (!containerRef.current) return;
-    createPhaserGame(onCellClick, onDragStart, onDragEnd, onEntityClick);
+    createPhaserGame(onCellClick, onDragStart, onDragEnd, onEntityClick, onBuildingCollect);
     return () => destroyPhaserGame();
-  }, [onCellClick, onDragStart, onDragEnd, onEntityClick]);
+  }, [onCellClick, onDragStart, onDragEnd, onEntityClick, onBuildingCollect]);
 
   useEffect(() => {
     const interval = setInterval(() => {
