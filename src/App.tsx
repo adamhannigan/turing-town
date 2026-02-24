@@ -9,10 +9,11 @@ import { createInitialState, type GameState, SECONDS_PER_DAY } from '@/game/stat
 import { runCoinAccumulator, calculateIncomePerDay } from '@/game/ecs/systems/coinAccumulator';
 import { runPopulationGrowth } from '@/game/ecs/systems/populationGrowth';
 import { placeBuilding, collectCoins, resetGame, moveBuilding, upgradeBuilding, collectBuildingCoins } from '@/game/actions';
-import { getEntity } from '@/game/ecs/world';
+import { getEntity, getAllEntities } from '@/game/ecs/world';
 import { saveGame, loadGame, clearSave } from '@/game/storage';
 import { restoreEntities } from '@/game/ecs/world';
 import { QUEST_CATALOG, getQuestDef, getQuestCurrentValue, type QuestDef, type QuestProgress } from '@/game/quests';
+import { getActiveAdjacencyBonuses } from '@/game/adjacency';
 import { HUD } from '@/hud/HUD';
 import '@/index.css';
 
@@ -157,6 +158,9 @@ export default function App() {
   }, []);
 
   const selectedEntity = selectedEntityId !== null ? getEntity(selectedEntityId) : null;
+  const selectedEntitySynergies = selectedEntity
+    ? getActiveAdjacencyBonuses(selectedEntity, getAllEntities())
+    : [];
 
   const activeQuestDisplays = state.quests
     .filter((q) => !q.claimed)
@@ -186,6 +190,7 @@ export default function App() {
         onEntityDeselect={handleEntityDeselect}
         quests={activeQuestDisplays}
         onQuestClaim={handleQuestClaim}
+        synergies={selectedEntitySynergies}
       />
       <div ref={containerRef} id="game-container" className="game-container" />
     </div>

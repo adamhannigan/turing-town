@@ -13,6 +13,7 @@ import {
   ISO_TILE_WIDTH,
   ISO_TILE_HEIGHT,
 } from "./isometric";
+import { getAdjacencyMultiplier } from "./adjacency";
 
 let cellClickCallback: ((gridX: number, gridY: number) => void) | null = null;
 let dragStartCallback:
@@ -49,10 +50,18 @@ export function setCollectBuildingCallback(cb: (entityId: number) => void): void
 /** Gold tints applied to upgraded buildings, indexed by upgrade level */
 const UPGRADE_TINTS = [0xffffff, 0xffe8b0, 0xffd700, 0xffc800, 0xffb000, 0xffa000];
 
+/** Pixels per upgrade star character in the label (used for synergy label positioning) */
+const STAR_WIDTH_PX = 8;
+/** Horizontal offset (px) between upgrade stars and synergy label */
+const SYNERGY_LABEL_OFFSET_PX = 6;
+/** Font size for in-scene building labels (upgrade stars, synergy indicator) */
+const BUILDING_LABEL_FONT_SIZE = '8px';
+
 export class MainScene extends Phaser.Scene {
   private gridGraphics!: Phaser.GameObjects.Graphics;
   private buildingSprites = new Map<number, Phaser.GameObjects.Sprite>();
   private upgradeLabels = new Map<number, Phaser.GameObjects.Text>();
+  private synergyLabels = new Map<number, Phaser.GameObjects.Text>();
   private coinIndicators = new Map<number, Phaser.GameObjects.Image>();
   private draggedEntity: number | null = null;
   private gridOffset!: { x: number; y: number };
@@ -266,7 +275,7 @@ export class MainScene extends Phaser.Scene {
         let label = this.upgradeLabels.get(id);
         if (!label) {
           label = this.add.text(0, 0, '', {
-            fontSize: '8px',
+            fontSize: BUILDING_LABEL_FONT_SIZE,
             color: '#ffd700',
             stroke: '#000000',
             strokeThickness: 2,
@@ -285,6 +294,31 @@ export class MainScene extends Phaser.Scene {
 
       // Apply a gold tint to upgraded buildings
       sprite!.setTint(UPGRADE_TINTS[Math.min(level, UPGRADE_TINTS.length - 1)]);
+
+      // Synergy indicator: show ⚡ on buildings that have active adjacency bonuses
+      const allEntities = withSprite;
+      const hasSynergy = getAdjacencyMultiplier(entity, allEntities) > 1;
+      if (hasSynergy) {
+        let synergyLabel = this.synergyLabels.get(id);
+        if (!synergyLabel) {
+          synergyLabel = this.add.text(0, 0, '⚡', {
+            fontSize: BUILDING_LABEL_FONT_SIZE,
+            color: '#00e5ff',
+            stroke: '#000000',
+            strokeThickness: 2,
+          });
+          synergyLabel.setOrigin(0.5, 1);
+          this.synergyLabels.set(id, synergyLabel);
+        }
+        // Position synergy label to the right of the upgrade stars
+        const starWidth = level > 0 ? level * STAR_WIDTH_PX : 0;
+        synergyLabel.setPosition(px + ISO_TILE_WIDTH / 2 + starWidth / 2 + SYNERGY_LABEL_OFFSET_PX, py);
+        synergyLabel.setDepth(gridX + gridY + 10);
+        synergyLabel.setVisible(true);
+      } else {
+        const synergyLabel = this.synergyLabels.get(id);
+        if (synergyLabel) synergyLabel.setVisible(false);
+      }
 
       // Coin indicator: floating coin icon above buildings with accumulated coins
       const accumulated = entity.building?.accumulatedCoins ?? 0;
@@ -316,6 +350,11 @@ export class MainScene extends Phaser.Scene {
         if (label) {
           label.destroy();
           this.upgradeLabels.delete(id);
+        }
+        const synergyLabel = this.synergyLabels.get(id);
+        if (synergyLabel) {
+          synergyLabel.destroy();
+          this.synergyLabels.delete(id);
         }
         const indicator = this.coinIndicators.get(id);
         if (indicator) {
