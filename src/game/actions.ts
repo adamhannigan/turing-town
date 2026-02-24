@@ -80,6 +80,17 @@ export function collectCoins(state: GameState): number {
   return total;
 }
 
+/** Collect accumulated coins from a single building by entity id */
+export function collectBuildingCoins(state: GameState, entityId: number): number {
+  const entity = getEntity(entityId);
+  if (!entity?.building) return 0;
+  const amount = Math.floor(entity.building.accumulatedCoins);
+  entity.building.accumulatedCoins = 0;
+  entity.building.lastEarnTime = Date.now();
+  state.coins += amount;
+  return amount;
+}
+
 /** Move a building from one grid cell to another, preserving its state */
 export function moveBuilding(
   entityId: number,

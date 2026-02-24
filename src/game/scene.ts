@@ -4,7 +4,7 @@
  */
 
 import Phaser from "phaser";
-import { getAllEntities } from "./ecs/world";
+import { getAllEntities, getEntity } from "./ecs/world";
 import { GRID_WIDTH, GRID_HEIGHT } from "./state";
 import {
   gridToScreen,
@@ -22,6 +22,7 @@ let dragEndCallback:
   | ((entityId: number, toGridX: number, toGridY: number) => void)
   | null = null;
 let entityClickCallback: ((entityId: number) => void) | null = null;
+let collectBuildingCallback: ((entityId: number) => void) | null = null;
 
 export function setCellClickCallback(
   cb: (gridX: number, gridY: number) => void
@@ -41,6 +42,10 @@ export function setEntityClickCallback(cb: (entityId: number) => void): void {
   entityClickCallback = cb;
 }
 
+export function setCollectBuildingCallback(cb: (entityId: number) => void): void {
+  collectBuildingCallback = cb;
+}
+
 /** Gold tints applied to upgraded buildings, indexed by upgrade level */
 const UPGRADE_TINTS = [0xffffff, 0xffe8b0, 0xffd700, 0xffc800, 0xffb000, 0xffa000];
 
@@ -48,6 +53,7 @@ export class MainScene extends Phaser.Scene {
   private gridGraphics!: Phaser.GameObjects.Graphics;
   private buildingSprites = new Map<number, Phaser.GameObjects.Sprite>();
   private upgradeLabels = new Map<number, Phaser.GameObjects.Text>();
+  private coinIndicators = new Map<number, Phaser.GameObjects.Image>();
   private draggedEntity: number | null = null;
   private gridOffset!: { x: number; y: number };
 
@@ -63,6 +69,7 @@ export class MainScene extends Phaser.Scene {
     this.load.image("tree", `${base}assets/tree.png`);
     this.load.image("fountain", `${base}assets/fountain.png`);
     this.load.image("road", `${base}assets/road.png`);
+    this.load.image("coin-icon", `${base}assets/icon-collect.png`);
   }
 
   create(): void {
@@ -224,9 +231,20 @@ export class MainScene extends Phaser.Scene {
           this.draggedEntity = null;
         });
 
-        // Pointer up without drag = click → select entity for upgrade
+        // Pointer up without drag = click → collect coins if available, then select entity for upgrade
         sprite.on("pointerup", () => {
           if (!hasDragged) {
+            const entity = getEntity(id);
+            const accumulated = entity?.building?.accumulatedCoins ?? 0;
+            if (accumulated >= 1) {
+              const amount = Math.floor(accumulated);
+              collectBuildingCallback?.(id);
+              this.spawnCollectAnimation(
+                sprite!.x + ISO_TILE_WIDTH / 2,
+                sprite!.y - ISO_TILE_HEIGHT,
+                amount
+              );
+            }
             entityClickCallback?.(id);
           }
         });
@@ -267,6 +285,27 @@ export class MainScene extends Phaser.Scene {
 
       // Apply a gold tint to upgraded buildings
       sprite!.setTint(UPGRADE_TINTS[Math.min(level, UPGRADE_TINTS.length - 1)]);
+
+      // Coin indicator: floating coin icon above buildings with accumulated coins
+      const accumulated = entity.building?.accumulatedCoins ?? 0;
+      const indicatorX = px + ISO_TILE_WIDTH / 2;
+      const indicatorBaseY = py - 12;
+      const floatOffset = Math.sin(this.time.now / 400) * 4;
+      if (accumulated >= 1) {
+        let indicator = this.coinIndicators.get(id);
+        if (!indicator) {
+          indicator = this.add.image(indicatorX, indicatorBaseY, 'coin-icon');
+          indicator.setDisplaySize(12, 12);
+          indicator.setOrigin(0.5);
+          this.coinIndicators.set(id, indicator);
+        }
+        indicator.setPosition(indicatorX, indicatorBaseY + floatOffset);
+        indicator.setDepth(gridX + gridY + 20);
+        indicator.setVisible(true);
+      } else {
+        const indicator = this.coinIndicators.get(id);
+        if (indicator) indicator.setVisible(false);
+      }
     }
 
     for (const [id, sprite] of this.buildingSprites) {
@@ -278,7 +317,31 @@ export class MainScene extends Phaser.Scene {
           label.destroy();
           this.upgradeLabels.delete(id);
         }
+        const indicator = this.coinIndicators.get(id);
+        if (indicator) {
+          indicator.destroy();
+          this.coinIndicators.delete(id);
+        }
       }
     }
+  }
+
+  private spawnCollectAnimation(x: number, y: number, amount: number): void {
+    const text = this.add.text(x, y, `+${amount}`, {
+      fontSize: '10px',
+      color: '#ffd700',
+      stroke: '#000000',
+      strokeThickness: 2,
+    });
+    text.setOrigin(0.5, 1);
+    text.setDepth(1000);
+    this.tweens.add({
+      targets: text,
+      y: y - 30,
+      alpha: 0,
+      duration: 900,
+      ease: 'Power2',
+      onComplete: () => text.destroy(),
+    });
   }
 }

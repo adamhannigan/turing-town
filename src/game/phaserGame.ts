@@ -4,7 +4,7 @@
  */
 
 import Phaser from 'phaser';
-import { MainScene, setCellClickCallback, setDragCallbacks, setEntityClickCallback } from './scene';
+import { MainScene, setCellClickCallback, setDragCallbacks, setEntityClickCallback, setCollectBuildingCallback } from './scene';
 
 const CONFIG: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -34,7 +34,8 @@ export function createPhaserGame(
   onCellClick: (gridX: number, gridY: number) => void,
   onDragStart?: (entityId: number, gridX: number, gridY: number) => void,
   onDragEnd?: (entityId: number, toGridX: number, toGridY: number) => void,
-  onEntityClick?: (entityId: number) => void
+  onEntityClick?: (entityId: number) => void,
+  onBuildingCollect?: (entityId: number) => void
 ): Phaser.Game {
   if (gameInstance) {
     gameInstance.destroy(true);
@@ -46,6 +47,9 @@ export function createPhaserGame(
   }
   if (onEntityClick) {
     setEntityClickCallback(onEntityClick);
+  }
+  if (onBuildingCollect) {
+    setCollectBuildingCallback(onBuildingCollect);
   }
   gameInstance = new Phaser.Game(CONFIG);
   return gameInstance;
