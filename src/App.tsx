@@ -5,7 +5,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPhaserGame, destroyPhaserGame } from '@/game/phaserGame';
-import { createInitialState, type GameState, SECONDS_PER_DAY } from '@/game/state';
+import { createInitialState, type GameState, SECONDS_PER_DAY, createInitialAbundance } from '@/game/state';
 import { runCoinAccumulator, calculateIncomePerDay } from '@/game/ecs/systems/coinAccumulator';
 import { runPopulationGrowth } from '@/game/ecs/systems/populationGrowth';
 import { runResourceAccumulator } from '@/game/ecs/systems/resourceAccumulator';
@@ -15,6 +15,7 @@ import { saveGame, loadGame, clearSave } from '@/game/storage';
 import { restoreEntities } from '@/game/ecs/world';
 import { QUEST_CATALOG, getQuestDef, getQuestCurrentValue, type QuestDef, type QuestProgress } from '@/game/quests';
 import { getActiveAdjacencyBonuses } from '@/game/adjacency';
+import { setResourceAbundanceData } from '@/game/scene';
 import { HUD } from '@/hud/HUD';
 import '@/index.css';
 
@@ -25,7 +26,12 @@ export default function App() {
     const saved = loadGame();
     if (saved) {
       restoreEntities(saved.entities);
-      return { ...createInitialState(), ...saved.state, lastEcsUpdateTime: 0 };
+      return {
+        ...createInitialState(),
+        ...saved.state,
+        lastEcsUpdateTime: 0,
+        resourceAbundance: saved.state.resourceAbundance ?? createInitialAbundance(),
+      };
     }
     return createInitialState();
   });
@@ -77,6 +83,7 @@ export default function App() {
       runCoinAccumulator(stateRef.current, now);
       const deltaSeconds = ECS_UPDATE_INTERVAL_MS / 1000;
       runResourceAccumulator(stateRef.current, deltaSeconds);
+      setResourceAbundanceData({ ...stateRef.current.resourceAbundance });
       const incomePerDay = calculateIncomePerDay(SECONDS_PER_DAY);
       setState((prev) => {
         const updated = {
@@ -84,6 +91,7 @@ export default function App() {
           lastEcsUpdateTime: now,
           incomePerDay,
           resources: { ...stateRef.current.resources },
+          resourceAbundance: { ...stateRef.current.resourceAbundance },
         };
         // Update quest completion status
         const questValues = {

@@ -4,7 +4,7 @@
 
 import type { GameState } from '@/game/state';
 import type { BuildingTypeId } from '@/game/state';
-import { BUILDING_CATALOG, getBuildingDef, MAX_UPGRADE_LEVEL, getUpgradeCost, ALL_RESOURCE_TYPES, RESOURCE_DEFS } from '@/game/state';
+import { BUILDING_CATALOG, getBuildingDef, MAX_UPGRADE_LEVEL, getUpgradeCost, ALL_RESOURCE_TYPES, RESOURCE_DEFS, NATURAL_RESOURCE_TYPES } from '@/game/state';
 import type { Entity } from '@/game/ecs/components';
 import type { QuestDef, QuestProgress } from '@/game/quests';
 
@@ -121,10 +121,26 @@ export function HUD({
             : type === 'population'
             ? state.totalPopulation
             : Math.floor(state.resources?.[type] ?? 0);
+          const isNatural = NATURAL_RESOURCE_TYPES.includes(type as typeof NATURAL_RESOURCE_TYPES[number]);
+          const abundance = isNatural ? (state.resourceAbundance?.[type as typeof NATURAL_RESOURCE_TYPES[number]] ?? 1) : 1;
+          const depletionClass = isNatural && abundance < 0.15
+            ? ' resource-depleted'
+            : isNatural && abundance < 0.4
+            ? ' resource-low'
+            : '';
           return (
-            <div key={type} className="resource-item" title={def.name}>
+            <div
+              key={type}
+              className={`resource-item${depletionClass}`}
+              title={isNatural ? `${def.name} (abundance: ${Math.round(abundance * 100)}%)` : def.name}
+            >
               <span className="resource-icon">{def.icon}</span>
               <span className="resource-value">{value}</span>
+              {isNatural && abundance < 0.4 && (
+                <span className="resource-abundance" style={{ color: abundance < 0.15 ? '#ff4444' : '#ff9900' }}>
+                  {Math.round(abundance * 100)}%
+                </span>
+              )}
             </div>
           );
         })}

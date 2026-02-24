@@ -54,7 +54,18 @@ export const RESOURCE_DEFS: Record<ResourceType, ResourceDef> = {
 export type Resources = Record<ResourceType, number>;
 
 /** Building type id (must match sprite keys in public/assets and catalog) */
-export type BuildingTypeId = 'house' | 'shop' | 'factory' | 'tree' | 'fountain' | 'road' | 'farm' | 'water_tower' | 'power_plant' | 'mine';
+export type BuildingTypeId = 'house' | 'shop' | 'factory' | 'tree' | 'fountain' | 'road' | 'farm' | 'water_tower' | 'power_plant' | 'mine' | 'park';
+
+/** Natural resources that can be depleted and regenerate over time */
+export type NaturalResourceType = 'wood' | 'stone' | 'water' | 'food';
+
+export const NATURAL_RESOURCE_TYPES: NaturalResourceType[] = ['wood', 'stone', 'water', 'food'];
+
+/** How much abundance is depleted per unit of natural resource produced */
+export const DEPLETION_RATE_FACTOR = 1 / 2000;
+
+/** Base regeneration rate of natural resource abundance per second */
+export const REGEN_BASE_RATE = 0.0002;
 
 export interface BuildingDef {
   id: BuildingTypeId;
@@ -71,6 +82,8 @@ export interface BuildingDef {
   produces?: Partial<Resources>;
   /** Resources consumed per second (amounts subtracted each second while placed) */
   consumes?: Partial<Resources>;
+  /** Bonus regeneration rate added to all natural resource abundances (per second per building) */
+  regenBonus?: number;
 }
 
 /** Catalog of all buildings. Order = display order. First is unlocked, rest locked. */
@@ -120,6 +133,11 @@ export const BUILDING_CATALOG: BuildingDef[] = [
     produces: { stone: 1.0, metal: 0.5 },
     consumes: { electricity: 0.2 },
   },
+  {
+    id: 'park', name: 'Park', cost: 75, coinsPerSecond: 1, unlocked: true,
+    produces: { happiness: 0.1 },
+    regenBonus: 0.0003,
+  },
 ];
 
 export function getBuildingDef(id: BuildingTypeId): BuildingDef | undefined {
@@ -162,6 +180,8 @@ export interface GameState {
   nextQuestIndex: number;
   /** Current amounts of each core resource */
   resources: Resources;
+  /** Abundance of each natural resource (0.0 = fully depleted, 1.0 = fully abundant) */
+  resourceAbundance: Record<NaturalResourceType, number>;
 }
 
 export function createInitialResources(): Resources {
@@ -179,6 +199,10 @@ export function createInitialResources(): Resources {
   };
 }
 
+export function createInitialAbundance(): Record<NaturalResourceType, number> {
+  return { wood: 1, stone: 1, water: 1, food: 1 };
+}
+
 export function createInitialState(): GameState {
   const { quests, nextQuestIndex } = createInitialQuestState();
   return {
@@ -193,5 +217,6 @@ export function createInitialState(): GameState {
     quests,
     nextQuestIndex,
     resources: createInitialResources(),
+    resourceAbundance: createInitialAbundance(),
   };
 }
