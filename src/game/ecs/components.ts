@@ -15,7 +15,7 @@ export interface GridCell {
   gridY: number;
 }
 
-/** Building occupies a cell and can produce coins */
+/** Building occupies a cell and can produce coins and/or resources */
 export interface Building {
   /** Building type id (matches state BUILDING_CATALOG and sprite key) */
   type: string;
@@ -25,6 +25,8 @@ export interface Building {
   coinsPerSecond: number;
   /** Last time we updated accumulated (ms) */
   lastEarnTime: number;
+  /** Resources generated per second (auto-collected into GameState each tick) */
+  resourcesPerSecond?: { wood?: number; stone?: number; energy?: number };
 }
 
 /** Rendered representation in Phaser */

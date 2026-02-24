@@ -54,6 +54,9 @@ export class MainScene extends Phaser.Scene {
     this.load.image("tree", `${base}assets/tree.png`);
     this.load.image("fountain", `${base}assets/fountain.png`);
     this.load.image("road", `${base}assets/road.png`);
+    this.load.image("lumber_mill", `${base}assets/lumber_mill.png`);
+    this.load.image("quarry", `${base}assets/quarry.png`);
+    this.load.image("power_plant", `${base}assets/power_plant.png`);
   }
 
   create(): void {

@@ -11,6 +11,9 @@ import {
   GRID_HEIGHT,
   TILE_SIZE,
   INITIAL_COINS,
+  INITIAL_WOOD,
+  INITIAL_STONE,
+  INITIAL_ENERGY,
   getBuildingDef,
   isBuildingUnlocked,
 } from './state';
@@ -24,6 +27,15 @@ export function placeBuilding(
   const def = getBuildingDef(buildingTypeId);
   if (!def || !isBuildingUnlocked(buildingTypeId)) return false;
   if (state.coins < def.cost) return false;
+
+  // Check resource costs
+  const rc = def.resourceCost;
+  if (rc) {
+    if (rc.wood && state.wood < rc.wood) return false;
+    if (rc.stone && state.stone < rc.stone) return false;
+    if (rc.energy && state.energy < rc.energy) return false;
+  }
+
   if (gridX < 0 || gridX >= GRID_WIDTH || gridY < 0 || gridY >= GRID_HEIGHT) {
     return false;
   }
@@ -33,6 +45,12 @@ export function placeBuilding(
   if (existing) return false;
 
   state.coins -= def.cost;
+  if (rc) {
+    if (rc.wood) state.wood -= rc.wood;
+    if (rc.stone) state.stone -= rc.stone;
+    if (rc.energy) state.energy -= rc.energy;
+  }
+
   const now = Date.now();
   const entity: Partial<import('./ecs/components').Entity> = {
     gridCell: { gridX, gridY },
@@ -45,6 +63,7 @@ export function placeBuilding(
       accumulatedCoins: 0,
       coinsPerSecond: def.coinsPerSecond,
       lastEarnTime: now,
+      resourcesPerSecond: def.resourcesPerSecond,
     },
     sprite: { key: buildingTypeId },
   };
@@ -113,6 +132,9 @@ export function moveBuilding(
 export function resetGame(state: GameState): void {
   clearWorld();
   state.coins = INITIAL_COINS;
+  state.wood = INITIAL_WOOD;
+  state.stone = INITIAL_STONE;
+  state.energy = INITIAL_ENERGY;
   state.selectedBuilding = null;
   state.lastEcsUpdateTime = 0;
   state.totalPopulation = 0;

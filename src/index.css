@@ -78,6 +78,43 @@ body {
   color: #9ab89a;
 }
 
+.resources {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.resource-item {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.resource-icon {
+  font-size: 1rem;
+}
+
+.resource-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #e8e8e8;
+}
+
+.resource-rate {
+  font-size: 0.75rem;
+  color: #7acc7a;
+  font-weight: 600;
+}
+
+.population {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #9ab89a;
+}
+
 .population-label {
   font-size: 0.85rem;
   color: #7a9a7a;

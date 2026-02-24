@@ -1,5 +1,5 @@
 /**
- * React HUD: coins, building dropdown (tycoon-style), collect, reset.
+ * React HUD: coins, resources, building dropdown (tycoon-style), collect, reset.
  */
 
 import type { GameState } from '@/game/state';
@@ -13,6 +13,30 @@ interface HUDProps {
   onReset: () => void;
 }
 
+function formatRate(rate: number): string {
+  return rate > 0 ? `+${rate.toFixed(1)}/s` : '';
+}
+
+function buildingCostLabel(def: ReturnType<typeof getBuildingDef>): string {
+  if (!def) return '';
+  const parts: string[] = [`${def.cost}🪙`];
+  const rc = def.resourceCost;
+  if (rc?.wood) parts.push(`${rc.wood}🪵`);
+  if (rc?.stone) parts.push(`${rc.stone}🪨`);
+  if (rc?.energy) parts.push(`${rc.energy}⚡`);
+  return parts.join(' ');
+}
+
+function canAfford(state: GameState, def: ReturnType<typeof getBuildingDef>): boolean {
+  if (!def) return false;
+  if (state.coins < def.cost) return false;
+  const rc = def.resourceCost;
+  if (rc?.wood && state.wood < rc.wood) return false;
+  if (rc?.stone && state.stone < rc.stone) return false;
+  if (rc?.energy && state.energy < rc.energy) return false;
+  return true;
+}
+
 export function HUD({
   state,
   onBuildingSelect,
@@ -22,9 +46,8 @@ export function HUD({
   const selectedDef = state.selectedBuilding
     ? getBuildingDef(state.selectedBuilding)
     : null;
-  const canAffordSelected =
-    selectedDef && state.coins >= selectedDef.cost;
-  
+  const affordable = canAfford(state, selectedDef ?? undefined);
+
   const base = import.meta.env.BASE_URL;
 
   return (
@@ -33,6 +56,29 @@ export function HUD({
         <div className="coins">
           <img src={`${base}assets/icon-collect.png`} alt="Coins" className="coins-icon-img" />
           <span className="coins-value">{Math.floor(state.coins)}</span>
+        </div>
+        <div className="resources">
+          <div className="resource-item" title="Wood">
+            <span className="resource-icon">🪵</span>
+            <span className="resource-value">{Math.floor(state.wood)}</span>
+            {state.woodPerSecond > 0 && (
+              <span className="resource-rate">{formatRate(state.woodPerSecond)}</span>
+            )}
+          </div>
+          <div className="resource-item" title="Stone">
+            <span className="resource-icon">🪨</span>
+            <span className="resource-value">{Math.floor(state.stone)}</span>
+            {state.stonePerSecond > 0 && (
+              <span className="resource-rate">{formatRate(state.stonePerSecond)}</span>
+            )}
+          </div>
+          <div className="resource-item" title="Energy">
+            <span className="resource-icon">⚡</span>
+            <span className="resource-value">{Math.floor(state.energy)}</span>
+            {state.energyPerSecond > 0 && (
+              <span className="resource-rate">{formatRate(state.energyPerSecond)}</span>
+            )}
+          </div>
         </div>
         <div className="population">
           <span className="population-label">Population:</span>
@@ -64,7 +110,7 @@ export function HUD({
                   disabled={!def.unlocked}
                 >
                   {def.unlocked
-                    ? `${def.name} (${def.cost} coins)`
+                    ? `${def.name} (${buildingCostLabel(def)})`
                     : `${def.name} (Locked)`}
                 </option>
               ))}
@@ -85,9 +131,9 @@ export function HUD({
       </div>
       {state.selectedBuilding && (
         <p className="hint">
-          {canAffordSelected
+          {affordable
             ? 'Click a tile on the grid to place the selected building.'
-            : `Need ${selectedDef ? Math.max(0, selectedDef.cost - Math.floor(state.coins)) : 0} more coins to place this building.`}
+            : `Requires: ${selectedDef ? buildingCostLabel(selectedDef) : ''}.`}
         </p>
       )}
     </div>

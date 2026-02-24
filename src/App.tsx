@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPhaserGame, destroyPhaserGame } from '@/game/phaserGame';
 import { createInitialState, type GameState, SECONDS_PER_DAY } from '@/game/state';
 import { runCoinAccumulator, calculateIncomePerDay } from '@/game/ecs/systems/coinAccumulator';
+import { runResourceAccumulator, calculateResourceRates } from '@/game/ecs/systems/resourceAccumulator';
 import { runPopulationGrowth } from '@/game/ecs/systems/populationGrowth';
 import { placeBuilding, collectCoins, resetGame, moveBuilding } from '@/game/actions';
 import { HUD } from '@/hud/HUD';
@@ -49,9 +50,21 @@ export default function App() {
     const interval = setInterval(() => {
       const now = Date.now();
       runPopulationGrowth(stateRef.current);
+      runResourceAccumulator(stateRef.current, now);
       runCoinAccumulator(stateRef.current, now);
       const incomePerDay = calculateIncomePerDay(SECONDS_PER_DAY);
-      setState((prev) => ({ ...prev, lastEcsUpdateTime: now, incomePerDay }));
+      const resourceRates = calculateResourceRates();
+      setState((prev) => ({
+        ...prev,
+        wood: stateRef.current.wood,
+        stone: stateRef.current.stone,
+        energy: stateRef.current.energy,
+        lastEcsUpdateTime: now,
+        incomePerDay,
+        woodPerSecond: resourceRates.wood,
+        stonePerSecond: resourceRates.stone,
+        energyPerSecond: resourceRates.energy,
+      }));
     }, ECS_UPDATE_INTERVAL_MS);
     return () => clearInterval(interval);
   }, []);
