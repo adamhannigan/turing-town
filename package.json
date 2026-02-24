@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "generate-placeholders": "node scripts/generate-placeholders.mjs",
     "generate-images": "tsx scripts/generate-images.ts",
-    "generate-hud-icons": "tsx scripts/generate-hud-icons.ts"
+    "generate-hud-icons": "tsx scripts/generate-hud-icons.ts",
+    "generate-road-tiles": "node scripts/generate-road-tiles.mjs"
   },
   "dependencies": {
     "phaser": "^3.80.1",

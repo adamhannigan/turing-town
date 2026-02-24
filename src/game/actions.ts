@@ -17,6 +17,7 @@ import {
   getUpgradeCost,
   getUpgradedEarnings,
 } from './state';
+import { getRoadSpriteKey, updateAdjacentRoadSprites } from './roadConnectivity';
 
 export function placeBuilding(
   state: GameState,
@@ -50,7 +51,7 @@ export function placeBuilding(
       lastEarnTime: now,
       upgradeLevel: 0,
     },
-    sprite: { key: buildingTypeId },
+    sprite: { key: buildingTypeId === 'road' ? getRoadSpriteKey(gridX, gridY) : buildingTypeId },
   };
   
   // Add population component if building has population capacity
@@ -63,6 +64,12 @@ export function placeBuilding(
   }
   
   createEntity(entity);
+
+  // Update this road and its neighbours' sprite keys
+  if (buildingTypeId === 'road') {
+    updateAdjacentRoadSprites(gridX, gridY);
+  }
+
   return true;
 }
 
@@ -102,6 +109,9 @@ export function moveBuilding(
   if (existing) return false;
 
   // Update grid position
+  const oldGridX = entity.gridCell!.gridX;
+  const oldGridY = entity.gridCell!.gridY;
+
   entity.gridCell!.gridX = toGridX;
   entity.gridCell!.gridY = toGridY;
 
@@ -109,6 +119,12 @@ export function moveBuilding(
   if (entity.position) {
     entity.position.x = toGridX * TILE_SIZE + TILE_SIZE / 2;
     entity.position.y = toGridY * TILE_SIZE + TILE_SIZE / 2;
+  }
+
+  // Refresh road connectivity for old and new locations
+  if (entity.building?.type === 'road') {
+    updateAdjacentRoadSprites(toGridX, toGridY);
+    updateAdjacentRoadSprites(oldGridX, oldGridY);
   }
 
   return true;

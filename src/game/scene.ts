@@ -62,7 +62,16 @@ export class MainScene extends Phaser.Scene {
     this.load.image("factory", `${base}assets/factory.png`);
     this.load.image("tree", `${base}assets/tree.png`);
     this.load.image("fountain", `${base}assets/fountain.png`);
-    this.load.image("road", `${base}assets/road.png`);
+    // Road tiles – all 16 connectivity variants
+    const roadVariants = [
+      'road', 'road-n', 'road-e', 'road-ne',
+      'road-s', 'road-ns', 'road-es', 'road-nes',
+      'road-w', 'road-nw', 'road-ew', 'road-new',
+      'road-sw', 'road-nsw', 'road-esw', 'road-cross',
+    ];
+    for (const key of roadVariants) {
+      this.load.image(key, `${base}assets/${key}.png`);
+    }
   }
 
   create(): void {
@@ -149,23 +158,35 @@ export class MainScene extends Phaser.Scene {
       const px = this.gridOffset.x + screenPos.x;
       const py = this.gridOffset.y + screenPos.y;
 
+      // Road tiles are rendered as flat isometric diamonds; other buildings
+      // use a taller sprite anchored at 88% to sit on the ground.
+      const isRoad = entity.building?.type === 'road';
+
       let sprite = this.buildingSprites.get(id);
       if (!sprite) {
-        // Position sprite so its bottom aligns with the bottom of the isometric tile
-        sprite = this.add.sprite(
-          px,
-          py + ISO_TILE_HEIGHT / 2,
-          entity.sprite!.key
-        );
-        // Use full isometric tile width and make buildings proportional
-        sprite.setDisplaySize(ISO_TILE_WIDTH, ISO_TILE_WIDTH);
-        // Anchor sprite at 88% from top to align building base with grid base
-        // This accounts for the visual base of buildings within the sprite
-        sprite.setOrigin(0, 0.88);
-        sprite.setInteractive({ draggable: true, useHandCursor: true });
+        if (isRoad) {
+          // Flat tile: origin at top-centre of diamond, sized to fill the tile exactly
+          sprite = this.add.sprite(px, py, entity.sprite!.key);
+          sprite.setDisplaySize(ISO_TILE_WIDTH, ISO_TILE_HEIGHT);
+          sprite.setOrigin(0.5, 0);
+          sprite.setDepth(gridX + gridY - 0.5); // roads sit below buildings
+        } else {
+          // Position sprite so its bottom aligns with the bottom of the isometric tile
+          sprite = this.add.sprite(
+            px,
+            py + ISO_TILE_HEIGHT / 2,
+            entity.sprite!.key
+          );
+          // Use full isometric tile width and make buildings proportional
+          sprite.setDisplaySize(ISO_TILE_WIDTH, ISO_TILE_WIDTH);
+          // Anchor sprite at 88% from top to align building base with grid base
+          // This accounts for the visual base of buildings within the sprite
+          sprite.setOrigin(0, 0.88);
+          sprite.setDepth(gridX + gridY);
+        }
 
-        // Set depth based on grid position for proper layering
-        sprite.setDepth(gridX + gridY);
+        sprite.setData('isRoad', isRoad);
+        sprite.setInteractive({ draggable: true, useHandCursor: true });
 
         let hasDragged = false;
 
@@ -186,10 +207,13 @@ export class MainScene extends Phaser.Scene {
         sprite.on(
           "drag",
           (_pointer: Phaser.Input.Pointer, dragX: number, dragY: number) => {
+            const isRoad = sprite!.getData('isRoad') as boolean;
+            // Road origin is at (px, py); building origin is at (px, py+16)
+            const yAdjust = isRoad ? 0 : ISO_TILE_HEIGHT / 2;
             // Convert screen position to grid position
             const gridPos = screenToGrid(
               dragX - this.gridOffset.x,
-              dragY - this.gridOffset.y - ISO_TILE_HEIGHT / 2
+              dragY - this.gridOffset.y - yAdjust
             );
 
             // Clamp to valid grid bounds
@@ -205,16 +229,18 @@ export class MainScene extends Phaser.Scene {
             // Convert back to screen position
             const snapScreen = gridToScreen(snapGridX, snapGridY);
             sprite!.x = this.gridOffset.x + snapScreen.x;
-            sprite!.y = this.gridOffset.y + snapScreen.y + ISO_TILE_HEIGHT / 2;
+            sprite!.y = this.gridOffset.y + snapScreen.y + yAdjust;
           }
         );
 
         // Drag end: determine target cell and finalize move
         sprite.on("dragend", (_pointer: Phaser.Input.Pointer) => {
           // Use the sprite's current position (already snapped during drag)
+          const isRoad = sprite!.getData('isRoad') as boolean;
+          const yAdjust = isRoad ? 0 : ISO_TILE_HEIGHT / 2;
           const gridPos = screenToGrid(
             sprite!.x - this.gridOffset.x,
-            sprite!.y - this.gridOffset.y - ISO_TILE_HEIGHT / 2
+            sprite!.y - this.gridOffset.y - yAdjust
           );
           sprite!.setAlpha(1);
 
@@ -235,8 +261,13 @@ export class MainScene extends Phaser.Scene {
       } else {
         // Only update position if not currently being dragged
         if (this.draggedEntity !== id) {
-          sprite.setPosition(px, py + ISO_TILE_HEIGHT / 2);
-          sprite.setDepth(gridX + gridY);
+          if (isRoad) {
+            sprite.setPosition(px, py);
+            sprite.setDepth(gridX + gridY - 0.5);
+          } else {
+            sprite.setPosition(px, py + ISO_TILE_HEIGHT / 2);
+            sprite.setDepth(gridX + gridY);
+          }
         }
         sprite.setTexture(entity.sprite!.key);
         sprite.setVisible(true);
