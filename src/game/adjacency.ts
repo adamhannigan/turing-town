@@ -43,6 +43,30 @@ export const ADJACENCY_BONUSES: AdjacencyBonusDef[] = [
     bonusPerNeighbor: 0.2,
     label: 'Industrial cluster (+20% coins)',
   },
+  {
+    sourceType: 'farm',
+    neighborType: 'water_tower',
+    bonusPerNeighbor: 0.3,
+    label: 'Irrigation bonus (+30% coins)',
+  },
+  {
+    sourceType: 'house',
+    neighborType: 'farm',
+    bonusPerNeighbor: 0.1,
+    label: 'Fresh food bonus (+10% coins)',
+  },
+  {
+    sourceType: 'factory',
+    neighborType: 'power_plant',
+    bonusPerNeighbor: 0.25,
+    label: 'Power supply bonus (+25% coins)',
+  },
+  {
+    sourceType: 'factory',
+    neighborType: 'mine',
+    bonusPerNeighbor: 0.2,
+    label: 'Material supply bonus (+20% coins)',
+  },
 ];
 
 /** Returns entities orthogonally adjacent to (gridX, gridY) */
