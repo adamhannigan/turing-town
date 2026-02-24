@@ -28,9 +28,18 @@ jobs:
             const { owner, repo } = context.repo;
             const api = github.rest;
 
-            const { data: issues } = await api.issues.listForRepo({
-              owner, repo, state: 'open', sort: 'created', direction: 'asc', per_page: 20,
-            });
+            // When triggered by a new issue, only triage that issue so it gets assigned to Copilot.
+            const openedIssueNumber = context.payload.issue?.number;
+            let issues;
+            if (context.eventName === 'issues' && context.payload.action === 'opened' && openedIssueNumber) {
+              const { data: issue } = await api.issues.get({ owner, repo, issue_number: openedIssueNumber });
+              issues = [issue];
+            } else {
+              const { data: list } = await api.issues.listForRepo({
+                owner, repo, state: 'open', sort: 'created', direction: 'asc', per_page: 20,
+              });
+              issues = list;
+            }
 
             const labelNames = (issue) => (issue.labels || []).map((l) => l.name);
             const has = (issue, name) => labelNames(issue).includes(name);
