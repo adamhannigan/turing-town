@@ -4,12 +4,19 @@
 
 import type { GameState } from './state';
 import type { Entity } from './ecs/components';
+import type { QuestProgress } from './quests';
 import { getAllEntities } from './ecs/world';
 
 const STORAGE_KEY = 'turing-town-save';
 
 interface SaveData {
-  state: Pick<GameState, 'coins' | 'selectedBuilding' | 'totalPopulation' | 'incomePerDay'>;
+  state: Pick<GameState, 'coins' | 'selectedBuilding' | 'totalPopulation' | 'incomePerDay'> & {
+    totalCoinsCollected?: number;
+    totalBuildingsPlaced?: number;
+    totalUpgradesApplied?: number;
+    quests?: QuestProgress[];
+    nextQuestIndex?: number;
+  };
   entities: Entity[];
 }
 
@@ -20,6 +27,11 @@ export function saveGame(state: GameState): void {
       selectedBuilding: state.selectedBuilding,
       totalPopulation: state.totalPopulation,
       incomePerDay: state.incomePerDay,
+      totalCoinsCollected: state.totalCoinsCollected,
+      totalBuildingsPlaced: state.totalBuildingsPlaced,
+      totalUpgradesApplied: state.totalUpgradesApplied,
+      quests: state.quests,
+      nextQuestIndex: state.nextQuestIndex,
     },
     entities: getAllEntities(),
   };

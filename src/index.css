@@ -311,3 +311,125 @@ body {
   font-weight: 700;
   color: #ffd700;
 }
+
+/* ─── Quest Panel ─── */
+
+.quests-panel {
+  margin-top: 6px;
+  padding: 10px 14px;
+  background: #1a2c1a;
+  border-radius: 10px;
+  border: 1px solid #3a6a3a;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.quests-panel-header {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #9ab89a;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.quests-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.quest-item {
+  background: #243824;
+  border-radius: 8px;
+  border: 1px solid #3a5a3a;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.quest-item.quest-completed {
+  border-color: #c9a227;
+}
+
+.quest-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.quest-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #e8e8e8;
+}
+
+.quest-reward {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #c9a227;
+  white-space: nowrap;
+}
+
+.quest-description {
+  font-size: 0.8rem;
+  color: #7a9a7a;
+}
+
+.quest-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.quest-progress-bar {
+  flex: 1;
+  height: 6px;
+  background: #1a2a1a;
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid #3a5a3a;
+}
+
+.quest-progress-fill {
+  height: 100%;
+  background: #4a9c4a;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.quest-item.quest-completed .quest-progress-fill {
+  background: #c9a227;
+}
+
+.quest-progress-text {
+  font-size: 0.75rem;
+  color: #9ab89a;
+  white-space: nowrap;
+  min-width: 60px;
+  text-align: right;
+}
+
+.quest-claim-btn {
+  margin-top: 2px;
+  padding: 5px 12px;
+  background: #c9a227;
+  color: #1a1a1a;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  align-self: flex-end;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.quest-claim-btn:hover {
+  background: #e0b82e;
+}
+
+.quest-claim-btn:active {
+  transform: scale(0.98);
+}

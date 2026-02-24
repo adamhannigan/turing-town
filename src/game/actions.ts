@@ -17,6 +17,7 @@ import {
   getUpgradeCost,
   getUpgradedEarnings,
 } from './state';
+import { createInitialQuestState } from './quests';
 
 export function placeBuilding(
   state: GameState,
@@ -63,6 +64,7 @@ export function placeBuilding(
   }
   
   createEntity(entity);
+  state.totalBuildingsPlaced = (state.totalBuildingsPlaced ?? 0) + 1;
   return true;
 }
 
@@ -77,6 +79,7 @@ export function collectCoins(state: GameState): number {
     b.lastEarnTime = Date.now();
   }
   state.coins += total;
+  state.totalCoinsCollected = (state.totalCoinsCollected ?? 0) + total;
   return total;
 }
 
@@ -120,6 +123,12 @@ export function resetGame(state: GameState): void {
   state.selectedBuilding = null;
   state.lastEcsUpdateTime = 0;
   state.totalPopulation = 0;
+  state.totalCoinsCollected = 0;
+  state.totalBuildingsPlaced = 0;
+  state.totalUpgradesApplied = 0;
+  const initial = createInitialQuestState();
+  state.quests = initial.quests;
+  state.nextQuestIndex = initial.nextQuestIndex;
 }
 
 /**
@@ -142,6 +151,7 @@ export function upgradeBuilding(state: GameState, entityId: number): boolean {
 
   state.coins -= cost;
   entity.building.upgradeLevel = currentLevel + 1;
+  state.totalUpgradesApplied = (state.totalUpgradesApplied ?? 0) + 1;
 
   // Recalculate coinsPerSecond based on new level
   entity.building.coinsPerSecond = getUpgradedEarnings(def.coinsPerSecond, entity.building.upgradeLevel);

@@ -6,6 +6,13 @@ import type { GameState } from '@/game/state';
 import type { BuildingTypeId } from '@/game/state';
 import { BUILDING_CATALOG, getBuildingDef, MAX_UPGRADE_LEVEL, getUpgradeCost } from '@/game/state';
 import type { Entity } from '@/game/ecs/components';
+import type { QuestDef, QuestProgress } from '@/game/quests';
+
+interface ActiveQuestDisplay {
+  def: QuestDef;
+  progress: QuestProgress;
+  currentValue: number;
+}
 
 interface HUDProps {
   state: GameState;
@@ -16,6 +23,8 @@ interface HUDProps {
   selectedEntity?: Entity | null;
   onUpgrade: () => void;
   onEntityDeselect: () => void;
+  quests: ActiveQuestDisplay[];
+  onQuestClaim: (questId: string) => void;
 }
 
 export function HUD({
@@ -26,6 +35,8 @@ export function HUD({
   selectedEntity,
   onUpgrade,
   onEntityDeselect,
+  quests,
+  onQuestClaim,
 }: HUDProps) {
   const selectedDef = state.selectedBuilding
     ? getBuildingDef(state.selectedBuilding)
@@ -134,6 +145,42 @@ export function HUD({
             ) : (
               <span className="upgrade-maxed">✦ Max Level!</span>
             )}
+          </div>
+        </div>
+      )}
+      {quests.length > 0 && (
+        <div className="quests-panel">
+          <div className="quests-panel-header">🏆 Quests</div>
+          <div className="quests-list">
+            {quests.map(({ def, progress, currentValue }) => {
+              const pct = Math.min(100, Math.floor((currentValue / def.target) * 100));
+              return (
+                <div key={def.id} className={`quest-item${progress.completed ? ' quest-completed' : ''}`}>
+                  <div className="quest-item-header">
+                    <span className="quest-title">{def.title}</span>
+                    <span className="quest-reward">+{def.reward} 🪙</span>
+                  </div>
+                  <div className="quest-description">{def.description}</div>
+                  <div className="quest-progress-row">
+                    <div className="quest-progress-bar">
+                      <div className="quest-progress-fill" style={{ width: `${pct}%` }} />
+                    </div>
+                    <span className="quest-progress-text">
+                      {Math.min(currentValue, def.target).toLocaleString()} / {def.target.toLocaleString()}
+                    </span>
+                  </div>
+                  {progress.completed && (
+                    <button
+                      type="button"
+                      className="quest-claim-btn"
+                      onClick={() => onQuestClaim(def.id)}
+                    >
+                      Claim reward
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

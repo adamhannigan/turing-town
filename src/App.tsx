@@ -12,6 +12,7 @@ import { placeBuilding, collectCoins, resetGame, moveBuilding, upgradeBuilding }
 import { getEntity } from '@/game/ecs/world';
 import { saveGame, loadGame, clearSave } from '@/game/storage';
 import { restoreEntities } from '@/game/ecs/world';
+import { QUEST_CATALOG, getQuestDef, getQuestCurrentValue, type QuestDef, type QuestProgress } from '@/game/quests';
 import { HUD } from '@/hud/HUD';
 import '@/index.css';
 
@@ -68,7 +69,26 @@ export default function App() {
       runPopulationGrowth(stateRef.current);
       runCoinAccumulator(stateRef.current, now);
       const incomePerDay = calculateIncomePerDay(SECONDS_PER_DAY);
-      setState((prev) => ({ ...prev, lastEcsUpdateTime: now, incomePerDay }));
+      setState((prev) => {
+        const updated = { ...prev, lastEcsUpdateTime: now, incomePerDay };
+        // Update quest completion status
+        const questValues = {
+          totalCoinsCollected: updated.totalCoinsCollected,
+          totalBuildingsPlaced: updated.totalBuildingsPlaced,
+          coins: updated.coins,
+          totalUpgradesApplied: updated.totalUpgradesApplied,
+          totalPopulation: updated.totalPopulation,
+        };
+        const quests: QuestProgress[] = updated.quests.map((q) => {
+          if (q.completed || q.claimed) return q;
+          const def = getQuestDef(q.id);
+          if (!def) return q;
+          const current = getQuestCurrentValue(def.type, questValues);
+          if (current >= def.target) return { ...q, completed: true };
+          return q;
+        });
+        return { ...updated, quests };
+      });
     }, ECS_UPDATE_INTERVAL_MS);
     return () => clearInterval(interval);
   }, []);
@@ -108,7 +128,46 @@ export default function App() {
     setSelectedEntityId(null);
   }, []);
 
+  const handleQuestClaim = useCallback((questId: string) => {
+    setState((prev) => {
+      const def = getQuestDef(questId);
+      if (!def) return prev;
+      const quests: QuestProgress[] = prev.quests.map((q) =>
+        q.id === questId && q.completed && !q.claimed ? { ...q, claimed: true } : q
+      );
+      // Replace claimed quest with next available one
+      const claimedIndex = quests.findIndex((q) => q.id === questId && q.claimed);
+      let { nextQuestIndex } = prev;
+      if (claimedIndex !== -1 && nextQuestIndex < QUEST_CATALOG.length) {
+        quests[claimedIndex] = { id: QUEST_CATALOG[nextQuestIndex].id, completed: false, claimed: false };
+        nextQuestIndex += 1;
+      } else if (claimedIndex !== -1) {
+        // No more quests; remove the slot
+        quests.splice(claimedIndex, 1);
+      }
+      const coins = prev.coins + def.reward;
+      stateRef.current.coins = coins;
+      return { ...prev, coins, quests, nextQuestIndex };
+    });
+  }, []);
+
   const selectedEntity = selectedEntityId !== null ? getEntity(selectedEntityId) : null;
+
+  const activeQuestDisplays = state.quests
+    .filter((q) => !q.claimed)
+    .map((q) => {
+      const def = getQuestDef(q.id);
+      if (!def) return null;
+      const currentValue = getQuestCurrentValue(def.type, {
+        totalCoinsCollected: state.totalCoinsCollected,
+        totalBuildingsPlaced: state.totalBuildingsPlaced,
+        coins: state.coins,
+        totalUpgradesApplied: state.totalUpgradesApplied,
+        totalPopulation: state.totalPopulation,
+      });
+      return { def, progress: q, currentValue };
+    })
+    .filter(Boolean) as { def: QuestDef; progress: QuestProgress; currentValue: number }[];
 
   return (
     <div className="app">
@@ -120,6 +179,8 @@ export default function App() {
         selectedEntity={selectedEntity}
         onUpgrade={handleUpgrade}
         onEntityDeselect={handleEntityDeselect}
+        quests={activeQuestDisplays}
+        onQuestClaim={handleQuestClaim}
       />
       <div ref={containerRef} id="game-container" className="game-container" />
     </div>

@@ -3,6 +3,9 @@
  * Not persisted; resets on refresh.
  */
 
+import type { QuestProgress } from './quests';
+import { createInitialQuestState } from './quests';
+
 export const GRID_WIDTH = 8;
 export const GRID_HEIGHT = 6;
 export const TILE_SIZE = 64;
@@ -66,14 +69,30 @@ export interface GameState {
   totalPopulation: number;
   /** Total income (taxes + building earnings) per in-game day */
   incomePerDay: number;
+  /** Cumulative coins collected via the collect button */
+  totalCoinsCollected: number;
+  /** Cumulative buildings placed */
+  totalBuildingsPlaced: number;
+  /** Cumulative building upgrades applied */
+  totalUpgradesApplied: number;
+  /** Active quest progress slots */
+  quests: QuestProgress[];
+  /** Index of the next quest in QUEST_CATALOG to offer when a slot opens */
+  nextQuestIndex: number;
 }
 
 export function createInitialState(): GameState {
+  const { quests, nextQuestIndex } = createInitialQuestState();
   return {
     coins: INITIAL_COINS,
     selectedBuilding: null,
     lastEcsUpdateTime: 0,
     totalPopulation: 0,
     incomePerDay: 0,
+    totalCoinsCollected: 0,
+    totalBuildingsPlaced: 0,
+    totalUpgradesApplied: 0,
+    quests,
+    nextQuestIndex,
   };
 }
