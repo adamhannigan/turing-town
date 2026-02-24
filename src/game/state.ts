@@ -54,7 +54,7 @@ export const RESOURCE_DEFS: Record<ResourceType, ResourceDef> = {
 export type Resources = Record<ResourceType, number>;
 
 /** Building type id (must match sprite keys in public/assets and catalog) */
-export type BuildingTypeId = 'house' | 'shop' | 'factory' | 'tree' | 'fountain' | 'road';
+export type BuildingTypeId = 'house' | 'shop' | 'factory' | 'tree' | 'fountain' | 'road' | 'farm' | 'water_tower' | 'power_plant' | 'mine';
 
 export interface BuildingDef {
   id: BuildingTypeId;
@@ -100,6 +100,25 @@ export const BUILDING_CATALOG: BuildingDef[] = [
   },
   {
     id: 'road', name: 'Road', cost: 5, coinsPerSecond: 0, unlocked: true,
+  },
+  {
+    id: 'farm', name: 'Farm', cost: 150, coinsPerSecond: 2, unlocked: false,
+    produces: { food: 1.5, happiness: 0.02 },
+    consumes: { water: 0.3 },
+  },
+  {
+    id: 'water_tower', name: 'Water Tower', cost: 200, coinsPerSecond: 1, unlocked: false,
+    produces: { water: 2.0 },
+  },
+  {
+    id: 'power_plant', name: 'Power Plant', cost: 400, coinsPerSecond: 20, unlocked: false,
+    produces: { electricity: 3.0 },
+    consumes: { wood: 0.8 },
+  },
+  {
+    id: 'mine', name: 'Mine', cost: 250, coinsPerSecond: 10, unlocked: false,
+    produces: { stone: 1.0, metal: 0.5 },
+    consumes: { electricity: 0.2 },
   },
 ];
 

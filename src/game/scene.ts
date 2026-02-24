@@ -78,6 +78,10 @@ export class MainScene extends Phaser.Scene {
     this.load.image("tree", `${base}assets/tree.png`);
     this.load.image("fountain", `${base}assets/fountain.png`);
     this.load.image("road", `${base}assets/road.png`);
+    this.load.image("farm", `${base}assets/farm.png`);
+    this.load.image("water_tower", `${base}assets/water_tower.png`);
+    this.load.image("power_plant", `${base}assets/power_plant.png`);
+    this.load.image("mine", `${base}assets/mine.png`);
     this.load.image("coin-icon", `${base}assets/icon-collect.png`);
   }
 
