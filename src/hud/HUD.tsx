@@ -4,13 +4,18 @@
 
 import type { GameState } from '@/game/state';
 import type { BuildingTypeId } from '@/game/state';
-import { BUILDING_CATALOG, getBuildingDef } from '@/game/state';
+import { BUILDING_CATALOG, getBuildingDef, MAX_UPGRADE_LEVEL, getUpgradeCost } from '@/game/state';
+import type { Entity } from '@/game/ecs/components';
 
 interface HUDProps {
   state: GameState;
   onBuildingSelect: (id: BuildingTypeId | null) => void;
   onCollect: () => void;
   onReset: () => void;
+  /** Currently selected building entity for upgrades */
+  selectedEntity?: Entity | null;
+  onUpgrade: () => void;
+  onEntityDeselect: () => void;
 }
 
 export function HUD({
@@ -18,6 +23,9 @@ export function HUD({
   onBuildingSelect,
   onCollect,
   onReset,
+  selectedEntity,
+  onUpgrade,
+  onEntityDeselect,
 }: HUDProps) {
   const selectedDef = state.selectedBuilding
     ? getBuildingDef(state.selectedBuilding)
@@ -26,6 +34,14 @@ export function HUD({
     selectedDef && state.coins >= selectedDef.cost;
   
   const base = import.meta.env.BASE_URL;
+
+  // Upgrade panel data
+  const building = selectedEntity?.building ?? null;
+  const buildingDef = building ? getBuildingDef(building.type as BuildingTypeId) : null;
+  const upgradeLevel = building?.upgradeLevel ?? 0;
+  const upgradeCost = buildingDef ? getUpgradeCost(buildingDef, upgradeLevel) : 0;
+  const canUpgrade = upgradeLevel < MAX_UPGRADE_LEVEL;
+  const canAffordUpgrade = state.coins >= upgradeCost;
 
   return (
     <div className="hud">
@@ -89,6 +105,37 @@ export function HUD({
             ? 'Click a tile on the grid to place the selected building.'
             : `Need ${selectedDef ? Math.max(0, selectedDef.cost - Math.floor(state.coins)) : 0} more coins to place this building.`}
         </p>
+      )}
+      {building && buildingDef && !state.selectedBuilding && (
+        <div className="upgrade-panel">
+          <div className="upgrade-panel-header">
+            <span className="upgrade-panel-title">{buildingDef.name}</span>
+            <span className="upgrade-panel-level">
+              {'★'.repeat(upgradeLevel)}{'☆'.repeat(MAX_UPGRADE_LEVEL - upgradeLevel)}
+            </span>
+            <button type="button" className="upgrade-panel-close" onClick={onEntityDeselect}>✕</button>
+          </div>
+          <div className="upgrade-panel-body">
+            {canUpgrade ? (
+              <>
+                <span className="upgrade-cost-label">
+                  Upgrade to Level {upgradeLevel + 1}: <strong>{upgradeCost} coins</strong>
+                </span>
+                <button
+                  type="button"
+                  className="upgrade-btn"
+                  onClick={onUpgrade}
+                  disabled={!canAffordUpgrade}
+                  title={canAffordUpgrade ? 'Upgrade this building' : `Need ${upgradeCost - Math.floor(state.coins)} more coins`}
+                >
+                  Upgrade ↑
+                </button>
+              </>
+            ) : (
+              <span className="upgrade-maxed">✦ Max Level!</span>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

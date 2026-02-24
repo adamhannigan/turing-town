@@ -44,3 +44,14 @@ export function clearWorld(): void {
 export function getAllEntities(): Entity[] {
   return Array.from(entities.values());
 }
+
+/** Restore previously saved entities into the world (e.g., from localStorage) */
+export function restoreEntities(savedEntities: Entity[]): void {
+  entities.clear();
+  let maxId = 0;
+  for (const entity of savedEntities) {
+    entities.set(entity.id, entity);
+    if (entity.id > maxId) maxId = entity.id;
+  }
+  nextId = maxId + 1;
+}

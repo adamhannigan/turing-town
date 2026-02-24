@@ -21,6 +21,7 @@ let dragStartCallback:
 let dragEndCallback:
   | ((entityId: number, toGridX: number, toGridY: number) => void)
   | null = null;
+let entityClickCallback: ((entityId: number) => void) | null = null;
 
 export function setCellClickCallback(
   cb: (gridX: number, gridY: number) => void
@@ -36,9 +37,17 @@ export function setDragCallbacks(
   dragEndCallback = onDragEnd;
 }
 
+export function setEntityClickCallback(cb: (entityId: number) => void): void {
+  entityClickCallback = cb;
+}
+
+/** Gold tints applied to upgraded buildings, indexed by upgrade level */
+const UPGRADE_TINTS = [0xffffff, 0xffe8b0, 0xffd700, 0xffc800, 0xffb000, 0xffa000];
+
 export class MainScene extends Phaser.Scene {
   private gridGraphics!: Phaser.GameObjects.Graphics;
   private buildingSprites = new Map<number, Phaser.GameObjects.Sprite>();
+  private upgradeLabels = new Map<number, Phaser.GameObjects.Text>();
   private draggedEntity: number | null = null;
   private gridOffset!: { x: number; y: number };
 
@@ -158,8 +167,16 @@ export class MainScene extends Phaser.Scene {
         // Set depth based on grid position for proper layering
         sprite.setDepth(gridX + gridY);
 
+        let hasDragged = false;
+
+        // Track pointer down to detect click vs drag
+        sprite.on("pointerdown", () => {
+          hasDragged = false;
+        });
+
         // Drag start: store entity and original position
         sprite.on("dragstart", () => {
+          hasDragged = true;
           this.draggedEntity = id;
           sprite!.setAlpha(0.6);
           dragStartCallback?.(id, gridX, gridY);
@@ -207,6 +224,13 @@ export class MainScene extends Phaser.Scene {
           this.draggedEntity = null;
         });
 
+        // Pointer up without drag = click → select entity for upgrade
+        sprite.on("pointerup", () => {
+          if (!hasDragged) {
+            entityClickCallback?.(id);
+          }
+        });
+
         this.buildingSprites.set(id, sprite);
       } else {
         // Only update position if not currently being dragged
@@ -217,12 +241,43 @@ export class MainScene extends Phaser.Scene {
         sprite.setTexture(entity.sprite!.key);
         sprite.setVisible(true);
       }
+
+      // Upgrade level label: show stars above upgraded buildings
+      const level = entity.building?.upgradeLevel ?? 0;
+      if (level > 0) {
+        let label = this.upgradeLabels.get(id);
+        if (!label) {
+          label = this.add.text(0, 0, '', {
+            fontSize: '8px',
+            color: '#ffd700',
+            stroke: '#000000',
+            strokeThickness: 2,
+          });
+          label.setOrigin(0.5, 1);
+          this.upgradeLabels.set(id, label);
+        }
+        label.setText('★'.repeat(level));
+        label.setPosition(px + ISO_TILE_WIDTH / 2, py);
+        label.setDepth(gridX + gridY + 10);
+        label.setVisible(true);
+      } else {
+        const label = this.upgradeLabels.get(id);
+        if (label) label.setVisible(false);
+      }
+
+      // Apply a gold tint to upgraded buildings
+      sprite!.setTint(UPGRADE_TINTS[Math.min(level, UPGRADE_TINTS.length - 1)]);
     }
 
     for (const [id, sprite] of this.buildingSprites) {
       if (!seen.has(id)) {
         sprite.destroy();
         this.buildingSprites.delete(id);
+        const label = this.upgradeLabels.get(id);
+        if (label) {
+          label.destroy();
+          this.upgradeLabels.delete(id);
+        }
       }
     }
   }

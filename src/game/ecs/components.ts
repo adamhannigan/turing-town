@@ -25,6 +25,8 @@ export interface Building {
   coinsPerSecond: number;
   /** Last time we updated accumulated (ms) */
   lastEarnTime: number;
+  /** Number of upgrades applied (0 = not upgraded) */
+  upgradeLevel: number;
 }
 
 /** Rendered representation in Phaser */
